@@ -1,3 +1,10 @@
+'''
+Created on Apr 17, 2014
+
+@author: Yin Zheng
+
+'''
+
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -16,13 +23,21 @@ AVAILABLE_QUEUES = {
     'qfat256@mp2': {'coresPerNode': 48, 'maxWalltime': '05:00:00:00'},
     'qfat512@mp2': {'coresPerNode': 48, 'maxWalltime': '02:00:00:00'},
 
-    # Mammouth Série
+    # Mammouth 
     'qtest@ms': {'coresPerNode': 8, 'maxWalltime': '00:01:00:00'},
     'qwork@ms': {'coresPerNode': 8, 'maxWalltime': '05:00:00:00'},
     'qlong@ms': {'coresPerNode': 8, 'maxWalltime': '41:16:00:00'},
 
     # Mammouth GPU
     # 'qwork@brume' : {'coresPerNode' : 0, 'maxWalltime' : '05:00:00:00'} # coresPerNode is variable and not relevant for this queue
+    # Guilinmin 
+    'k20': {'coresPerNode': 16, 'maxWalltime': '30:00:00:00'},
+    'sw2': {'coresPerNode': 16, 'maxWalltime': '30:00:00:00'},
+    'lm2': {'coresPerNode': 16, 'maxWalltime': '30:00:00:00'},
+    'sw': {'coresPerNode': 12, 'maxWalltime': '30:00:00:00'},
+    'lm': {'coresPerNode': 12, 'maxWalltime': '30:00:00:00'},
+    'hb': {'coresPerNode': 12, 'maxWalltime': '30:00:00:00'}
+    
 }
 
 
@@ -58,13 +73,13 @@ def main():
         end = (i + 1) * nb_commands_per_file
 
         qsub_filename = os.path.join(qsub_directory, 'jobCommands_' + str(i) + '.sh')
-        write_qsub_file(commands[start:end], logfiles_name[start:end], qsub_filename, job_directory, args.queueName, args.walltime, os.getcwd(), args.cuda)
+        write_qsub_file(commands[start:end], logfiles_name[start:end], qsub_filename, job_directory, args.queueName, args.walltime, os.getcwd(), args.group_ID, args.pmem, args.email, args.cuda)
         qsub_filenames.append(qsub_filename)
 
     # Launch the jobs with QSUB
     if not args.doNotLaunch:
         for qsub_filename in qsub_filenames:
-            qsub_output = check_output('qsub ' + qsub_filename, shell=True)
+            qsub_output = check_output(args.subOption + ' ' + qsub_filename, shell=True)
             print qsub_output,
 
 
@@ -77,6 +92,10 @@ def parse_arguments():
     parser.add_argument('-x', '--doNotLaunch', action='store_true', help='Creates the QSUB files without launching them.')
     parser.add_argument('-f', '--commandsFile', type=file, required=False, help='File containing commands to launch. Each command must be on a seperate line. (Replaces commandAndOptions)')
     parser.add_argument("commandAndOptions", help="Options for the command", nargs=argparse.REMAINDER)
+    parser.add_argument('-s', '--subOption', default='qsub', help='Choice of msub or qsub.')
+    parser.add_argument('-A', '--group_ID', default='None', help='Add group_ID.')
+    parser.add_argument('-m', '--pmem', default='None', help='memory per process.')
+    parser.add_argument('-E', '--email', default='None', help='email to contact you.')
     args = parser.parse_args()
 
     # Check for invalid arguments
@@ -129,15 +148,15 @@ def generate_name(arguments, max_length=255):
         name += argname if name == '' else ('__' + argname)
 
     current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    name = current_time + ' ' + name[:max_length-len(current_time)-1]  # No more than 256 character
+    name = current_time + '_' + name[:max_length-len(current_time)-1]  # No more than 256 character
     return name
 
 
 def create_job_folders(jobname):
     """Creates the folders where the logs and QSUB files will be saved."""
-    path_logs = os.path.join(os.getcwd(), 'LOGS_QSUB')
+    path_logs = os.path.join(os.getcwd(), 'LOGS_MSUB')
     path_job_logs = os.path.join(path_logs, jobname)
-    path_job_commands = os.path.join(path_job_logs, 'QSUB_commands')
+    path_job_commands = os.path.join(path_job_logs, 'MSUB_commands')
 
     if not os.path.exists(path_job_commands):
         os.makedirs(path_job_commands)
@@ -145,7 +164,7 @@ def create_job_folders(jobname):
     return path_job_logs, path_job_commands
 
 
-def write_qsub_file(commands, logfiles_name, qsub_filename, job_directory, queue, walltime, current_directory, use_cuda=False):
+def write_qsub_file(commands, logfiles_name, qsub_filename, job_directory, queue, walltime, current_directory, group_ID, pmem, email, use_cuda=False):
     """
     Example of a line for one job for QSUB:
         cd $SRC ; python -u trainAutoEnc2.py 10 80 sigmoid 0.1 vocKL_sarath_german True True > trainAutoEnc2.py-10-80-sigmoid-0.1-vocKL_sarath_german-True-True &
@@ -154,16 +173,56 @@ def write_qsub_file(commands, logfiles_name, qsub_filename, job_directory, queue
     with open(qsub_filename, 'w') as qsub_file:
         qsub_file.write('#!/bin/bash\n')
         qsub_file.write('#PBS -q ' + queue + '\n')
-        qsub_file.write('#PBS -l nodes=1:ppn=1\n')
+        
+        
+        if use_cuda:
+            if pmem == 'None':
+                qsub_file.write('#PBS -l nodes=1:ppn=1:gpus=1\n')
+            else:
+                qsub_file.write('#PBS -l nodes=1:ppn=1:gpus=1,pmem=' +pmem+'\n')
+        else:
+            if pmem == 'None':
+                qsub_file.write('#PBS -l nodes=1:ppn=1\n')
+            else:
+                qsub_file.write('#PBS -l nodes=1:ppn=1,pmem=' +pmem+'\n')
+            
+#         if use_cuda:
+#             qsub_file.write('#PBS -l nodes=1:ppn=1:gpus=1:m128G,pmem=7700mb\n')
+#         else:
+#             qsub_file.write('#PBS -l nodes=1:ppn=1:m128G,pmem=7700mb\n')
+#         if use_cuda:
+#             qsub_file.write('#PBS -l nodes=1:ppn=2:gpus=1,pmem=3700mb\n')
+#         else:
+#             qsub_file.write('#PBS -l nodes=1:ppn=2,pmem=3700mb\n')
         qsub_file.write('#PBS -V\n')
-        qsub_file.write('#PBS -l walltime=' + walltime + '\n\n')
+        
+        if group_ID == 'None':
+            pass
+        else:
+            qsub_file.write('#PBS -A ' + group_ID+ ' \n')
+            
+        if email == 'None':
+            pass
+        else:
+            qsub_file.write('#PBS -m a\n')
+            qsub_file.write('#PBS -M ' + email + ' \n\n')
+            
+        qsub_file.write('#PBS -l walltime=' + walltime + '\n')
+
+        
+        qsub_file.write('export OMP_NUM_THREADS=1\n')
+        qsub_file.write('export GOTO_NUM_THREADS=1\n')
+        qsub_file.write('export MKL_NUM_THREADS=1\n\n')
 
         if use_cuda:
-            qsub_file.write('module load cuda\n')
+            qsub_file.write('module load CUDA_Toolkit/5.0\n')
 
         qsub_file.write('SRC_DIR_SMART_LAUNCHER=' + current_directory + '\n\n')
-
-        command_template = "cd $SRC_DIR_SMART_LAUNCHER; {0} &> {1} &\n"
+#         qsub_file.write("nvidia-smi -q | grep 'Process ID' | awk '{print $4}' | xargs -I {} ps -p {} -o user\n\n")
+        if use_cuda:
+            command_template = "cd $SRC_DIR_SMART_LAUNCHER; THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32,base_compiledir=/localscratch/$PBS_JOBID {0} &> {1} &\n"
+        else:
+            command_template = "cd $SRC_DIR_SMART_LAUNCHER; THEANO_FLAGS=mode=FAST_RUN,device=cpu,floatX=float32,base_compiledir=/localscratch/$PBS_JOBID {0} &> {1} &\n"
         for command, log_name in zip(commands, logfiles_name):
             qsub_file.write(command_template.format(command, os.path.join(job_directory, log_name)))
 
@@ -172,3 +231,4 @@ def write_qsub_file(commands, logfiles_name, qsub_filename, job_directory, queue
 
 if __name__ == "__main__":
     main()
+
