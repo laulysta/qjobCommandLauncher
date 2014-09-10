@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
+import numpy as np
 import argparse
 import datetime
 import math
@@ -39,9 +41,11 @@ def main():
         # Commands that needs to be parsed and unfolded.
         arguments = []
         for opt in args.commandAndOptions:
-            opt_split = opt.split()
+            opt_split = expand_argument(opt)
+
             for i, split in enumerate(opt_split):
                 opt_split[i] = os.path.normpath(split)  # If the arg value is a path, remove the final '/' if there is one at the end.
+
             arguments += [opt_split]
 
         jobname = generate_name(arguments)
@@ -108,16 +112,36 @@ def get_commands_from_file(fileobj):
     return fileobj.read().split('\n')
 
 
-def get_commands_from_arguments(arguments):
-    commands = ['']
+def expand_argument(argument):
+    stringify = lambda array: [str(e) for e in array]
 
-    # TODO: Refactor parsing
-    for argument in arguments:
-        commands_tmp = []
-        for argvalue in argument:
-            for job_str in commands:
-                commands_tmp += [job_str + argvalue + ' ']
-        commands = commands_tmp
+    if argument.startswith("range(") or argument.startswith("linspace(") or \
+       argument.startswith("logspace(") or argument.startswith("randint(") or \
+       argument.startswith("uniform(") or argument.startswith("normal("):
+        return stringify(eval(argument))
+
+    elif argument.startswith("choice("):
+        regex_choices = re.compile(r"\[(.+)\]")
+        choices = regex_choices.findall(argument)[0]
+        sanitized_choices = ','.join(map("'{0}'".format, choices.split(',')))
+
+        arguments = eval(argument.replace(choices, sanitized_choices))
+        if isinstance(arguments, np.string_):
+            return [arguments]
+        return arguments
+    elif argument.startswith("["):
+        regex_choices = re.compile(r"\[(.+)\]")
+        choices = regex_choices.findall(argument)[0].split(',')
+        return choices
+
+    return argument.split()
+
+
+def get_commands_from_arguments(arguments):
+    commands = []
+    for argvalues in product(*arguments):
+        command = " ".join(argvalues)
+        commands.append(command)
 
     return commands
 
