@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import os
-import itertools
 from datetime import datetime
 
 import smartdispatch
@@ -99,19 +98,36 @@ def get_commands_from_file(fileobj):
 
 
 def get_commands_from_arguments(arguments):
-    ''' Obtains commands from the product of every unfolded arguments.
+    unfolded_commands = [arguments]
+    unfolded_commands_stard_idx = [0]
 
-    Parameters
-    ----------
-    arguments : list of list of str
-        list of unfolded arguments
+    while True:
+        new_unfolded_commands = []
+        new_unfolded_commands_stard_idx = []
 
-    Returns
-    -------
-    commands : list of str
-        commands resulting from the product of every unfolded arguments
-    '''
-    return [" ".join(argvalues) for argvalues in itertools.product(*arguments)]
+        for idx in range(len(unfolded_commands)):
+            start_bracket_idx = unfolded_commands[idx].find("[", unfolded_commands_stard_idx[idx])
+
+            if start_bracket_idx == -1:
+                new_unfolded_commands_stard_idx = [-1]
+                break
+
+            while unfolded_commands[idx][start_bracket_idx + 1] == "[":
+                start_bracket_idx += 1
+
+            stop_bracket_idx = unfolded_commands[idx].find("]", start_bracket_idx)
+
+            for argument in unfolded_commands[idx][start_bracket_idx + 1:stop_bracket_idx].split(" "):
+                new_unfolded_commands_stard_idx += [start_bracket_idx + len(argument)]
+                new_unfolded_commands += [unfolded_commands[idx][0:start_bracket_idx] + argument + unfolded_commands[idx][stop_bracket_idx + 1:]]
+
+        if -1 in new_unfolded_commands_stard_idx:
+            break
+
+        unfolded_commands = new_unfolded_commands
+        unfolded_commands_stard_idx = new_unfolded_commands_stard_idx
+
+    return unfolded_commands
 
 
 def unfold_argument(argument):
