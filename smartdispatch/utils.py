@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import re
 import hashlib
 import unicodedata
@@ -15,7 +17,7 @@ def print_boxed(string):
     out = u"\u250c" + box_line + u"\u2510\n"
     out += '\n'.join([u"\u2502 {} \u2502".format(line.ljust(max_len)) for line in splitted_string])
     out += u"\n\u2514" + box_line + u"\u2518"
-    print out
+    print(out)
 
 
 def yes_no_prompt(query, default=None):
@@ -92,6 +94,8 @@ def detect_cluster():
     # Get server status
     try:
         output = Popen(["qstat", "-B"], stdout=PIPE).communicate()[0]
+        if isinstance(output, bytes):
+            output = output.decode("utf-8")
     except OSError:
         # If qstat is not available we assume that the cluster is unknown.
         return None
