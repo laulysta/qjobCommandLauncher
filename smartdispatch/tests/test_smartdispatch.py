@@ -3,7 +3,11 @@ import re
 import shutil
 import time as t
 from os.path import join as pjoin
-from StringIO import StringIO
+
+try:
+    from io import StringIO  # Python 3
+except ImportError:
+    from StringIO import StringIO  # Python 2
 
 import tempfile
 from nose.tools import assert_true, assert_equal

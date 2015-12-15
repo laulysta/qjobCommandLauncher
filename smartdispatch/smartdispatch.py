@@ -97,7 +97,7 @@ def unfold_command(command):
         pos = match.end()
 
     arguments.append([text[pos:]])  # Add remaining unfolded arguments
-    arguments = [map(utils.decode_escaped_characters, argvalues) for argvalues in arguments]
+    arguments = [list(map(utils.decode_escaped_characters, argvalues)) for argvalues in arguments]
     return ["".join(argvalues) for argvalues in itertools.product(*arguments)]
 
 
