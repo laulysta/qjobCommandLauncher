@@ -25,7 +25,7 @@ class TestSmartWorker(unittest.TestCase):
         self.command_manager = CommandManager(os.path.join(self._commands_dir, "commands.txt"))
         self.command_manager.set_commands_to_run(self.commands)
 
-        self.commands_uid = map(utils.generate_uid_from_string, self.commands)
+        self.commands_uid = list(map(utils.generate_uid_from_string, self.commands))
 
     def tearDown(self):
         shutil.rmtree(self._commands_dir)
@@ -114,6 +114,6 @@ class TestSmartWorker(unittest.TestCase):
             time.sleep(1)
 
         stdout, stderr = process.communicate()
-        assert_equal(stdout, "")
-        assert_true("write-lock" in stderr, msg="Forcing a race condition, try increasing sleeping time above.")
-        assert_true("Traceback" not in stderr)  # Check that there are no errors.
+        assert_equal(stdout, b"")
+        assert_true("write-lock" in stderr.decode(), msg="Forcing a race condition, try increasing sleeping time above.")
+        assert_true("Traceback" not in stderr.decode())  # Check that there are no errors.
