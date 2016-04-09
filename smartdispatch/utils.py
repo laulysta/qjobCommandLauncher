@@ -57,11 +57,13 @@ def slugify(value):
     ---------
     https://github.com/django/django/blob/1.7c3/django/utils/text.py#L436
     """
+    # Convert `value` to Unicode so we can slugify it using the unicodedata module.
     try:
         value = unicode(value, "UTF-8")
     except NameError:
-        pass  # In Python 3 all strings are already unicode.
+        pass  # In Python 3, all strings are already stored as Unicode.
 
+    # Replace all compatibility characters with their equivalents.
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub('[^\w\s-]', '', value).strip().lower()
     return str(re.sub('[-\s]+', '_', value))
