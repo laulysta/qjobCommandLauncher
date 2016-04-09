@@ -151,7 +151,8 @@ def parse_arguments():
     parser.add_argument('-c', '--coresPerCommand', type=int, required=False, help='How many cores a command needs.', default=1)
     parser.add_argument('-g', '--gpusPerCommand', type=int, required=False, help='How many gpus a command needs.', default=1)
     # parser.add_argument('-m', '--memPerCommand', type=float, required=False, help='How much memory a command needs (in Gb).')
-    parser.add_argument('-f', '--commandsFile', type=str, required=False, help='File containing commands to launch. Each command must be on a seperate line. (Replaces commandAndOptions)')
+    parser.add_argument('-f', '--commandsFile', type=argparse.FileType('r'), required=False,
+                        help='File containing commands to launch. Each command must be on a seperate line. (Replaces commandAndOptions)')
 
     parser.add_argument('-l', '--modules', type=str, required=False, help='List of additional modules to load.', nargs='+')
     parser.add_argument('-x', '--doNotLaunch', action='store_true', help='Creates the QSUB files without launching them.')
@@ -174,9 +175,6 @@ def parse_arguments():
             parser.error("You need to specify a command to launch.")
         if args.queueName not in AVAILABLE_QUEUES and ((args.coresPerNode is None and args.gpusPerNode is None) or args.walltime is None):
             parser.error("Unknown queue, --coresPerNode/--gpusPerNode and --walltime must be set.")
-
-        if args.commandsFile is not None and not os.path.isfile(args.commandsFile):
-            parser.error("Command file does not exist: '{0}'.".format(args.commandsFile))
 
     return args
 
