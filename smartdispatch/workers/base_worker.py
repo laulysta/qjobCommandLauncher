@@ -46,12 +46,19 @@ def main():
         stderr_filename = os.path.join(args.logs_dir, uid + ".err")
 
         # Get job and node ID
-        job = os.environ['PBS_JOBID']
-        with open(os.environ['PBS_NODEFILE']) as nodefile:
-            node = ""
-            for line in nodefile:
-                node += line + ','
-            node = str.rstrip(node, ' ,\n')
+        try:
+            job = os.environ['PBS_JOBID']
+        except KeyError:
+            job = 'undefined'
+
+        try:
+            with open(os.environ['PBS_NODEFILE']) as nodefile:
+                node = ""
+                for line in nodefile:
+                    node += line + ','
+                node = str.rstrip(node, ' ,\n')
+        except KeyError:
+            node = 'undefined'
 
         with open(stdout_filename, 'a') as stdout_file:
             with open(stderr_filename, 'a') as stderr_file:
