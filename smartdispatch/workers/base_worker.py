@@ -45,11 +45,19 @@ def main():
         stdout_filename = os.path.join(args.logs_dir, uid + ".out")
         stderr_filename = os.path.join(args.logs_dir, uid + ".err")
 
+        # Get job and node ID
+        job = os.environ['PBS_JOBID']
+        with open(os.environ['PBS_NODEFILE']) as nodefile:
+            node = ""
+            for line in nodefile:
+                node += line + ','
+            node = str.rstrip(node, ' ,\n')
+
         with open(stdout_filename, 'a') as stdout_file:
             with open(stderr_filename, 'a') as stderr_file:
-                log_datetime = t.strftime("## SMART-DISPATCH - Started on: %Y-%m-%d %H:%M:%S ##\n")
+                log_datetime = t.strftime("## SMART-DISPATCH - Started on: %Y-%m-%d %H:%M:%S - In job: {job} - On nodes: {node} ##\n".format(job=job, node=node))
                 if stdout_file.tell() > 0:  # Not the first line in the log file.
-                    log_datetime = t.strftime("\n## SMART-DISPATCH - Resumed on: %Y-%m-%d %H:%M:%S ##\n")
+                    log_datetime = t.strftime("\n## SMART-DISPATCH - Resumed on: %Y-%m-%d %H:%M:%S - In job: {job} - On nodes: {node} ##\n".format(job=job, node=node))
 
                 log_command = "## SMART-DISPATCH - Command: " + command + '\n'
 
