@@ -46,25 +46,14 @@ def main():
         stderr_filename = os.path.join(args.logs_dir, uid + ".err")
 
         # Get job and node ID
-        try:
-            job = os.environ['PBS_JOBID']
-        except KeyError:
-            job = 'undefined'
-
-        try:
-            with open(os.environ['PBS_NODEFILE']) as nodefile:
-                node = ""
-                for line in nodefile:
-                    node += line + ','
-                node = str.rstrip(node, ' ,\n')
-        except KeyError:
-            node = 'undefined'
+        job_id = os.environ.get('PBS_JOBID', 'undefined')
+        node_name = os.environ.get('HOSTNAME', 'undefined')
 
         with open(stdout_filename, 'a') as stdout_file:
             with open(stderr_filename, 'a') as stderr_file:
-                log_datetime = t.strftime("## SMART-DISPATCH - Started on: %Y-%m-%d %H:%M:%S - In job: {job} - On nodes: {node} ##\n".format(job=job, node=node))
+                log_datetime = t.strftime("## SMART-DISPATCH - Started on: %Y-%m-%d %H:%M:%S - In job: {job_id} - On nodes: {node_name} ##\n".format(job_id=job_id, node_name=node_name))
                 if stdout_file.tell() > 0:  # Not the first line in the log file.
-                    log_datetime = t.strftime("\n## SMART-DISPATCH - Resumed on: %Y-%m-%d %H:%M:%S - In job: {job} - On nodes: {node} ##\n".format(job=job, node=node))
+                    log_datetime = t.strftime("\n## SMART-DISPATCH - Resumed on: %Y-%m-%d %H:%M:%S - In job: {job_id} - On nodes: {node_name} ##\n".format(job_id=job_id, node_name=node_name))
 
                 log_command = "## SMART-DISPATCH - Command: " + command + '\n'
 
