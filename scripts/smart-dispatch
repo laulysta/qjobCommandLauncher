@@ -136,9 +136,12 @@ def main():
     print "## {nb_commands} command(s) will be executed in {nb_jobs} job(s) ##".format(nb_commands=nb_commands, nb_jobs=len(pbs_filenames))
     print "Batch UID:\n{batch_uid}".format(batch_uid=jobname)
     if not args.doNotLaunch:
+        in_batch_job_counter = -1
         jobs_id = []
         for pbs_filename in pbs_filenames:
-            qsub_output = check_output('{launcher} {pbs_filename}'.format(launcher=LAUNCHER if args.launcher is None else args.launcher, pbs_filename=pbs_filename), shell=True)
+            in_batch_job_counter + = 1
+            batch_uid = jobname + '_' + str(in_batch_job_counter)
+            qsub_output = check_output('{launcher} -N {batch_uid} {pbs_filename}'.format(launcher=LAUNCHER if args.launcher is None else args.launcher, batch_uid = batch_uid , pbs_filename=pbs_filename), shell=True)
             jobs_id += [qsub_output.strip()]
 
             # On some clusters, SRMJID and PBS_JOBID don't match
