@@ -128,6 +128,10 @@ def main():
                       }
 
     job_generator = job_generator_factory(queue, commands, command_params, CLUSTER_NAME, path_job)
+    for pbs in job_generator.pbs_list:
+        pbs.add_options(options='-N ' + jobname + '_' + str(i))
+        i += 1
+
     if args.pbsFlags is not None:
         job_generator.add_pbs_flags(args.pbsFlags.split(' '))
     pbs_filenames = job_generator.write_pbs_files(path_job_commands)
@@ -136,12 +140,9 @@ def main():
     print "## {nb_commands} command(s) will be executed in {nb_jobs} job(s) ##".format(nb_commands=nb_commands, nb_jobs=len(pbs_filenames))
     print "Batch UID:\n{batch_uid}".format(batch_uid=jobname)
     if not args.doNotLaunch:
-        in_batch_job_counter = -1
         jobs_id = []
         for pbs_filename in pbs_filenames:
-            in_batch_job_counter + = 1
-            batch_uid = jobname + '_' + str(in_batch_job_counter)
-            qsub_output = check_output('{launcher} -N {batch_uid} {pbs_filename}'.format(launcher=LAUNCHER if args.launcher is None else args.launcher, batch_uid = batch_uid , pbs_filename=pbs_filename), shell=True)
+            qsub_output = check_output('{launcher} {pbs_filename}'.format(launcher=LAUNCHER if args.launcher is None else args.launcher, pbs_filename=pbs_filename), shell=True)
             jobs_id += [qsub_output.strip()]
 
             # On some clusters, SRMJID and PBS_JOBID don't match
