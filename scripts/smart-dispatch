@@ -41,7 +41,7 @@ def main():
         if args.commandsFile is not None:
             # Commands are listed in a file.
             jobname = smartdispatch.generate_logfolder_name(os.path.basename(args.commandsFile.name), max_length=235)
-            commands = smartdispatch.get_commands_from_file(args.commandsFile)
+	    commands = smartdispatch.get_commands_from_file(args.commandsFile)
         else:
             # Command that needs to be parsed and unfolded.
             command = " ".join(args.commandAndOptions)
@@ -50,6 +50,8 @@ def main():
 
         commands = smartdispatch.replace_uid_tag(commands)
         nb_commands = len(commands)  # For print at the end
+	if args.batchName:
+		jobname = args.batchName
 
     elif args.mode == "resume":
         jobname = args.batch_uid
@@ -61,7 +63,6 @@ def main():
             raise LookupError("Batch UID ({0}) does not exist! Cannot resume.".format(jobname))
     else:
         raise ValueError("Unknown subcommand!")
-
     job_folders_paths = smartdispatch.get_job_folders(path_smartdispatch_logs, jobname)
     path_job, path_job_logs, path_job_commands = job_folders_paths
 
@@ -129,11 +130,11 @@ def main():
 
     job_generator = job_generator_factory(queue, commands, command_params, CLUSTER_NAME, path_job)
     ctr = 0 
+    # generating default names per each jobs in each batch
     for pbs in job_generator.pbs_list:
-	pbs.add_options(N = '{}{}{}'.format(jobname,'_', str(ctr)))
-        print(jobname)
-        ctr += 1
-
+	    pbs.add_options(N = '{}{}{}'.format(jobname,'_', str(ctr)))
+            print(jobname)
+            ctr += 1
 
     if args.pbsFlags is not None:
         job_generator.add_pbs_flags(args.pbsFlags.split(' '))
@@ -166,6 +167,7 @@ def main():
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', '--queueName', required=True, help='Queue used (ex: qwork@mp2, qfat256@mp2, qfat512@mp2)')
+    parser.add_argument('-N', '--batchName', required=False, help='The names of batches') 
     parser.add_argument('-t', '--walltime', required=False, help='Set the estimated running time of your jobs using the DD:HH:MM:SS format. Note that they will be killed when this time limit is reached.')
     parser.add_argument('-L', '--launcher', choices=['qsub', 'msub'], required=False, help='Which launcher to use. Default: qsub')
     parser.add_argument('-C', '--coresPerNode', type=int, required=False, help='How many cores there are per node.')
@@ -197,6 +199,9 @@ def parse_arguments():
     if args.mode == "launch":
         if args.commandsFile is None and len(args.commandAndOptions) < 1:
             parser.error("You need to specify a command to launch.")
+	if args.batchName is not None and len(args.batchName) > 54:
+	    parser.error("The length of jobname shouldn't exceed 64.")
+	    
         if args.queueName not in AVAILABLE_QUEUES and ((args.coresPerNode is None and args.gpusPerNode is None) or args.walltime is None):
             parser.error("Unknown queue, --coresPerNode/--gpusPerNode and --walltime must be set.")
         if args.coresPerCommand < 1:
