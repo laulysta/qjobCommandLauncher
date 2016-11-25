@@ -17,17 +17,20 @@ def print_boxed(string):
     out += u"\n\u2514" + box_line + u"\u2518"
     print out
 
-def name_cropper(string):
-    """check if the length of the jobname and id together is less than 64"""
+def jobname_generator(jobname, job_id):
+    """check if the length of the jobname is less than 64"""
     
     "args:
-	    string: jobname and id"
+	    jobname: initial jobname
+	    job_id: id of the job in the current batch"
+	    
     "returns: 
 	    croped_string: the croped version of the string"
-    if len(string) > 64:
-        croped_string = string[len(string)- 64:len(sting)]
+    if len(jobname) + len(job_id) > 64:
+	extra_length =  len(jobname) + len(job_id) - 64
+        croped_string = '{}_{}'.format(jobname[0:len(jobname - extra_length)], job_id)
     else:
-	croped_string = string
+	croped_string = '{}_{}'.format(jobname, job_id)
     return croped_string
 
 def yes_no_prompt(query, default=None):

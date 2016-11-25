@@ -131,8 +131,7 @@ def main():
     ctr = 0 
     # generating default names per each jobs in each batch
     for pbs in job_generator.pbs_list:
-	    name =  '{}_{}'.format(jobname, str(ctr))
-	    proper_size_name = utils.name_cropper(name) 
+	    proper_size_name = utils.jobname_generator(jobname, str(ctr)) 
 	    pbs.add_options(N = proper_size_name)
             ctr += 1
 
