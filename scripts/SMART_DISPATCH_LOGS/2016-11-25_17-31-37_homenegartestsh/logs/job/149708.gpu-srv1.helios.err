@@ -1,0 +1,12 @@
+
+==============NVSMI LOG==============
+
+Timestamp                           : Fri Nov 25 17:31:43 2016
+Driver Version                      : 352.79
+
+Attached GPUs                       : 8
+GPU 0000:09:00.0
+    Accounting Mode                 : Enabled
+    Accounting Mode Buffer Size     : 1920
+    Accounted Processes             : None
+

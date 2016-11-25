@@ -17,6 +17,18 @@ def print_boxed(string):
     out += u"\n\u2514" + box_line + u"\u2518"
     print out
 
+def name_cropper(string):
+    """check if the length of the jobname and id together is less than 64"""
+    
+    "args:
+	    string: jobname and id"
+    "returns: 
+	    croped_string: the croped version of the string"
+    if len(string) > 64:
+        croped_string = string[len(string)- 64:len(sting)]
+    else:
+	croped_string = string
+    return croped_string
 
 def yes_no_prompt(query, default=None):
     available_prompts = {None: " [y/n] ", 'y': " [Y/n] ", 'n': " [y/N] "}
