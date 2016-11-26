@@ -20,12 +20,12 @@ def print_boxed(string):
 def jobname_generator(jobname, job_id):
     """check if the length of the jobname is less than 64"""
     
-    "args:
+    """args:
 	    jobname: initial jobname
-	    job_id: id of the job in the current batch"
+	    job_id: id of the job in the current batch
 	    
-    "returns: 
-	    croped_string: the croped version of the string"
+      returns: 
+	    croped_string: the croped version of the string"""
     if len(jobname) + len(job_id) > 64:
 	extra_length =  len(jobname) + len(job_id) - 64
         croped_string = '{}_{}'.format(jobname[0:len(jobname - extra_length)], job_id)
