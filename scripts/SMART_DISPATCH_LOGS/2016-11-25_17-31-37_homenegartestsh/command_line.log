@@ -1,0 +1,3 @@
+## 2016-11-25 17:31:37 ##
+/rap/jvb-000-aa/stack/conda/bin/smart-dispatch -q test --walltime 1:00 launch /home/negar/test.sh
+
