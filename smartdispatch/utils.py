@@ -18,19 +18,24 @@ def print_boxed(string):
     print out
 
 def jobname_generator(jobname, job_id):
-    """check if the length of the jobname is less than 64"""
-    
-    """args:
-	    jobname: initial jobname
-	    job_id: id of the job in the current batch
-	    
-      returns: 
-	    croped_string: the croped version of the string"""
-    if len(jobname) + len(job_id) > 64:
-	extra_length =  len(jobname) + len(job_id) - 64
-        croped_string = '{}_{}'.format(jobname[0:len(jobname - extra_length)], job_id)
+    """Crop the jobname to a maximum of 64 characters.
+    Parameters
+        ----------
+        jobname : str
+        Initial jobname.
+        job_id: str
+        ID of the job in the current batch.
+
+    Returns
+        -------
+        str
+        The cropped version of the string.	
+    """	    
+    # 64 - 1 since the total length including -1 should be less than 64
+    if len(jobname) + len(job_id) > 63:
+        croped_string = '{}_{}'.format(jobname[:63 - len(job_id)], job_id)
     else:
-	croped_string = '{}_{}'.format(jobname, job_id)
+        croped_string = '{}_{}'.format(jobname, job_id)
     return croped_string
 
 def yes_no_prompt(query, default=None):
