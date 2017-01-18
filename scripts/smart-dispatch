@@ -131,7 +131,6 @@ def main():
 
     job_generator = job_generator_factory(queue, commands, command_params, CLUSTER_NAME, path_job)
     # generating default names per each jobs in each batch
-    jobname = utils.default_name(jobname, job_generator)
     for pbs_id, pbs in enumerate(job_generator.pbs_list):
         proper_size_name = utils.jobname_generator(jobname, pbs_id)
         pbs.add_options(N=proper_size_name)
@@ -169,7 +168,7 @@ def main():
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', '--queueName', required=True, help='Queue used (ex: qwork@mp2, qfat256@mp2, qfat512@mp2)')
-    parser.add_argument('-N', '--batchName', required=False, help='The names of batches')
+    parser.add_argument('-N', '--batchName', required=False, help='The batch name. Max 235 chars.')
     parser.add_argument('-t', '--walltime', required=False, help='Set the estimated running time of your jobs using the DD:HH:MM:SS format. Note that they will be killed when this time limit is reached.')
     parser.add_argument('-L', '--launcher', choices=['qsub', 'msub'], required=False, help='Which launcher to use. Default: qsub')
     parser.add_argument('-C', '--coresPerNode', type=int, required=False, help='How many cores there are per node.')

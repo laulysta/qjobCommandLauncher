@@ -27,13 +27,6 @@ def jobname_generator(jobname, job_id):
         croped_string = '{}_{}'.format(jobname, job_id)
     return croped_string
 
-def default_name(jobname, job_generator):
-    for pbs_id, pbs in enumerate(job_generator.pbs_list):
-        pbs.add_options(N = '{}{}{}'.format(jobname,'_', str(pbs_id)))
-        print(jobname)
-        print '{}{}{}'.format(jobname,'_', str(pbs_id))
-        return '{}{}{}'.format(jobname,'_', str(pbs_id))
-
 
 def print_boxed(string):
     splitted_string = string.split('\n')
