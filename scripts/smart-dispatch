@@ -146,8 +146,7 @@ def main():
                                            log_folder=path_job_logs, worker_call_suffix=worker_call_suffix)
     commands = [COMMAND_STRING.format(ID=i) for i in range(args.pool)]
 
-    # TODO: use args.memPerNode instead of args.memPerNode
-    queue = Queue(args.queueName, CLUSTER_NAME, args.walltime, args.coresPerNode, args.gpusPerNode, float('inf'), args.modules)
+    queue = Queue(args.queueName, CLUSTER_NAME, args.walltime, args.coresPerNode, args.gpusPerNode, args.memPerNode, args.modules)
 
     # Check that requested core number does not exceed node total
     if args.coresPerCommand > queue.nb_cores_per_node:
@@ -172,7 +171,7 @@ def main():
     for pbs_id, pbs in enumerate(job_generator.pbs_list):
         proper_size_name = utils.jobname_generator(jobname, pbs_id)
         pbs.add_options(N=proper_size_name)
-    
+
     if args.pbsFlags is not None:
         job_generator.add_pbs_flags(args.pbsFlags.split(' '))
     pbs_filenames = job_generator.write_pbs_files(path_job_commands)
@@ -193,11 +192,11 @@ def parse_arguments():
     parser.add_argument('-L', '--launcher', choices=['qsub', 'msub'], required=False, help='Which launcher to use. Default: qsub')
     parser.add_argument('-C', '--coresPerNode', type=int, required=False, help='How many cores there are per node.')
     parser.add_argument('-G', '--gpusPerNode', type=int, required=False, help='How many gpus there are per node.')
-    # parser.add_argument('-M', '--memPerNode', type=int, required=False, help='How much memory there are per node (in Gb).')
+    parser.add_argument('-M', '--memPerNode', type=int, required=False, help='How much memory there are per node (in Gb).')
 
     parser.add_argument('-c', '--coresPerCommand', type=int, required=False, help='How many cores a command needs.', default=1)
     parser.add_argument('-g', '--gpusPerCommand', type=int, required=False, help='How many gpus a command needs.', default=1)
-    # parser.add_argument('-m', '--memPerCommand', type=float, required=False, help='How much memory a command needs (in Gb).')
+    parser.add_argument('-m', '--memPerCommand', type=float, required=False, help='How much memory a command needs (in Gb).')
     parser.add_argument('-f', '--commandsFile', type=file, required=False, help='File containing commands to launch. Each command must be on a seperate line. (Replaces commandAndOptions)')
 
     parser.add_argument('-l', '--modules', type=str, required=False, help='List of additional modules to load.', nargs='+')
