@@ -207,7 +207,7 @@ def parse_arguments():
             parser.error("Unknown queue, --coresPerNode/--gpusPerNode and --walltime must be set.")
         if args.coresPerCommand < 1:
             parser.error("coresPerNode must be at least 1")
-        if len(args.batchName) >= batchNameMaxLen:
+        if args.batchName is not None and len(args.batchName) >= batchNameMaxLen:
             parser.error("batchName should be {} chars max.".format(batchNameMaxLen))
 
     return args
