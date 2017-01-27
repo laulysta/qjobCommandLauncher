@@ -25,14 +25,14 @@ class TestSmartWorker(unittest.TestCase):
         self.command_manager = CommandManager(os.path.join(self._commands_dir, "commands.txt"))
         self.command_manager.set_commands_to_run(self.commands)
 
-        self.commands_uid = map(utils.generate_uid_from_string, self.commands)
+        self.commands_uid = [utils.generate_uid_from_string(c) for c in self.commands]
 
     def tearDown(self):
         shutil.rmtree(self._commands_dir)
         shutil.rmtree(self.logs_dir)
 
     def test_main(self):
-        command = ['python2', self.base_worker_script, self.command_manager._commands_filename, self.logs_dir]
+        command = ['python', self.base_worker_script, self.command_manager._commands_filename, self.logs_dir]
         assert_equal(call(command), 0)
         # Simulate a resume, i.e. re-run the command, the output/error should be concatenated.
         self.command_manager.set_commands_to_run(self.commands)
@@ -106,7 +106,7 @@ class TestSmartWorker(unittest.TestCase):
                 assert_equal("", logfile.read())
 
     def test_lock(self):
-        command = ['python2', self.base_worker_script, self.command_manager._commands_filename, self.logs_dir]
+        command = ['python', self.base_worker_script, self.command_manager._commands_filename, self.logs_dir]
 
         # Lock the commands file before running 'base_worker.py'
         with open_with_lock(self.command_manager._commands_filename, 'r+'):
@@ -114,6 +114,6 @@ class TestSmartWorker(unittest.TestCase):
             time.sleep(1)
 
         stdout, stderr = process.communicate()
-        assert_equal(stdout, "")
-        assert_true("write-lock" in stderr, msg="Forcing a race condition, try increasing sleeping time above.")
-        assert_true("Traceback" not in stderr)  # Check that there are no errors.
+        assert_equal(stdout, b"")
+        assert_true("write-lock" in stderr.decode(), msg="Forcing a race condition, try increasing sleeping time above.")
+        assert_true("Traceback" not in stderr.decode())  # Check that there are no errors.

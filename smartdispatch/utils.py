@@ -1,4 +1,7 @@
+from __future__ import print_function
+
 import re
+import binascii
 import hashlib
 import unicodedata
 import json
@@ -36,7 +39,7 @@ def print_boxed(string):
     out = u"\u250c" + box_line + u"\u2510\n"
     out += '\n'.join([u"\u2502 {} \u2502".format(line.ljust(max_len)) for line in splitted_string])
     out += u"\n\u2514" + box_line + u"\u2518"
-    print out
+    print(out)
 
 
 def yes_no_prompt(query, default=None):
@@ -56,13 +59,13 @@ def yes_no_prompt(query, default=None):
 
 def chunks(sequence, n):
     """ Yield successive n-sized chunks from sequence. """
-    for i in xrange(0, len(sequence), n):
+    for i in range(0, len(sequence), n):
         yield sequence[i:i + n]
 
 
 def generate_uid_from_string(value):
     """ Create unique identifier from a string. """
-    return hashlib.sha256(value).hexdigest()
+    return hashlib.sha256(value.encode()).hexdigest()
 
 
 def slugify(value):
@@ -75,7 +78,14 @@ def slugify(value):
     ---------
     https://github.com/django/django/blob/1.7c3/django/utils/text.py#L436
     """
-    value = unicodedata.normalize('NFKD', unicode(value, "UTF-8")).encode('ascii', 'ignore').decode('ascii')
+    # Convert `value` to Unicode so we can slugify it using the unicodedata module.
+    try:
+        value = unicode(value, "UTF-8")
+    except NameError:
+        pass  # In Python 3, all strings are already stored as Unicode.
+
+    # Replace all compatibility characters with their equivalents.
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub('[^\w\s-]', '', value).strip().lower()
     return str(re.sub('[-\s]+', '_', value))
 
@@ -83,7 +93,8 @@ def slugify(value):
 def encode_escaped_characters(text, escaping_character="\\"):
     """ Escape the escaped character using its hex representation """
     def hexify(match):
-        return "\\x{0}".format(match.group()[-1].encode("hex"))
+        # Reference: http://stackoverflow.com/questions/18298251/python-hex-values-to-convert-to-a-string-integer
+        return "\\x" + binascii.hexlify(match.group()[-1].encode()).decode()
 
     return re.sub(r"\\.", hexify, text)
 
@@ -94,7 +105,7 @@ def decode_escaped_characters(text):
         return ''
 
     def unhexify(match):
-        return match.group()[2:].decode("hex")
+        return binascii.unhexlify(match.group()[2:]).decode()
 
     return re.sub(r"\\x..", unhexify, text)
 
@@ -113,6 +124,8 @@ def detect_cluster():
     # Get server status
     try:
         output = Popen(["qstat", "-B"], stdout=PIPE).communicate()[0]
+        if isinstance(output, bytes):
+            output = output.decode("utf-8")
     except OSError:
         # If qstat is not available we assume that the cluster is unknown.
         return None
