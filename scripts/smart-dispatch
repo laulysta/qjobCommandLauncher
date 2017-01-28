@@ -148,10 +148,15 @@ def main():
 
     queue = Queue(args.queueName, CLUSTER_NAME, args.walltime, args.coresPerNode, args.gpusPerNode, args.memPerNode, args.modules)
 
-    # Check that requested core number does not exceed node total
+    # Check that requested per command resources do not exceed node total
     if args.coresPerCommand > queue.nb_cores_per_node:
         sys.stderr.write("smart-dispatch: error: coresPerCommand exceeds nodes total: asked {req_cores} cores, nodes have {node_cores}\n"
                          .format(req_cores=args.coresPerCommand, node_cores=queue.nb_cores_per_node))
+        sys.exit(2)
+
+    if args.memPerCommand > queue.mem_per_node:
+        sys.stderr.write("smart-dispatch: error: memPerCommand exceeds nodes total: asked {req_mem} Gb, nodes have {node_mem} Gb\n"
+                         .format(req_mem=args.memPerCommand, node_mem=queue.mem_per_node))
         sys.exit(2)
 
     command_params = {'nb_cores_per_command': args.coresPerCommand,
@@ -223,7 +228,9 @@ def parse_arguments():
         if args.queueName not in AVAILABLE_QUEUES and ((args.coresPerNode is None and args.gpusPerNode is None) or args.walltime is None):
             parser.error("Unknown queue, --coresPerNode/--gpusPerNode and --walltime must be set.")
         if args.coresPerCommand < 1:
-            parser.error("coresPerNode must be at least 1")
+            parser.error("coresPerCommand must be at least 1")
+        if args.memPerCommand is not None and args.memPerCommand < 0:
+            parser.error("memPerCommand must be positive")
 
     return args
 

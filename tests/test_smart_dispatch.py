@@ -34,6 +34,9 @@ class TestSmartdispatcher(unittest.TestCase):
         smart_dispatch_command_with_cores = '{} -C 1 -M 1 -c {{cores}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command_with_cores = smart_dispatch_command_with_cores.format('launch ' + self.folded_commands, cores='{cores}')
 
+        smart_dispatch_command_with_memory = '{} -C 1 -M 1 -m {{memory}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        self.launch_command_with_memory = smart_dispatch_command_with_memory.format('launch ' + self.folded_commands, memory='{memory}')
+
         self._cwd = os.getcwd()
         os.chdir(self.testing_dir)
 
@@ -92,6 +95,18 @@ class TestSmartdispatcher(unittest.TestCase):
 
         # Test validation
         assert_equal(exit_status_0, 2)
+        assert_equal(exit_status_100, 2)        
+        assert_true(os.path.isdir(self.logs_dir))
+
+    def test_main_launch_with_memory_command(self):
+        # Actual test
+        exit_status_0 = call(self.launch_command_with_memory.format(memory=0), shell=True)
+        exit_status_05 = call(self.launch_command_with_memory.format(memory=0.5), shell=True)
+        exit_status_100 = call(self.launch_command_with_memory.format(memory=100), shell=True)
+
+        # Test validation
+        assert_equal(exit_status_0, 2)
+        assert_equal(exit_status_05, 0)
         assert_equal(exit_status_100, 2)        
         assert_true(os.path.isdir(self.logs_dir))
 
