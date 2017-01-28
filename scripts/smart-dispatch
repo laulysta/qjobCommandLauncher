@@ -229,7 +229,7 @@ def parse_arguments():
             parser.error("Unknown queue, --coresPerNode/--gpusPerNode and --walltime must be set.")
         if args.coresPerCommand < 1:
             parser.error("coresPerCommand must be at least 1")
-        if args.memPerCommand is not None and args.memPerCommand < 0:
+        if args.memPerCommand is not None and args.memPerCommand <= 0:
             parser.error("memPerCommand must be positive")
 
     return args
