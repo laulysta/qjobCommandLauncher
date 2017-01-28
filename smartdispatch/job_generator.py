@@ -84,10 +84,8 @@ class JobGenerator(object):
         if self.mem_per_command is not None:
             nb_commands_per_node = min(nb_commands_per_node, self.queue.mem_per_node // self.mem_per_command)
             mem_per_command = self.mem_per_command
-        elif self.queue.mem_per_node < float('inf'):
-            mem_per_command = self.queue.mem_per_node // nb_commands_per_node
         else:
-            mem_per_command = None
+            mem_per_command = self.queue.mem_per_node // nb_commands_per_node
 
         pbs_files = []
         # Distribute equally the jobs among the PBS files and generate those files

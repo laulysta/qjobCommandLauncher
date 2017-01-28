@@ -9,7 +9,7 @@ class Queue(object):
         self.walltime = walltime
         self.nb_cores_per_node = nb_cores_per_node
         self.nb_gpus_per_node = nb_gpus_per_node
-        self.mem_per_node = mem_per_node if mem_per_node is not None else float('inf')
+        self.mem_per_node = mem_per_node
         self.modules = modules if modules is not None else []
 
         available_queues = get_available_queues(self.cluster_name)
@@ -38,5 +38,5 @@ class Queue(object):
         if self.nb_gpus_per_node is None:
             self.nb_gpus_per_node = 0  # Means, there are no gpus on those queue nodes
 
-        if self.mem_per_node <= 0:
+        if self.mem_per_node is None or self.mem_per_node <= 0:
             raise ValueError("Queues must have at least some memory!")
