@@ -23,15 +23,15 @@ class TestSmartdispatcher(unittest.TestCase):
         self.nb_commands = len(self.commands)
 
         scripts_path = abspath(pjoin(os.path.dirname(__file__), os.pardir, "scripts"))
-        self.smart_dispatch_command = '{} -C 1 -q test -t 5:00 -x'.format(pjoin(scripts_path, 'smart-dispatch'))
+        self.smart_dispatch_command = '{} -C 1 -M 1 -q test -t 5:00 -x'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command = "{0} launch {1}".format(self.smart_dispatch_command, self.folded_commands)
         self.resume_command = "{0} resume {{0}}".format(self.smart_dispatch_command)
 
-        smart_dispatch_command_with_pool = '{} --pool 10 -C 1 -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        smart_dispatch_command_with_pool = '{} --pool 10 -C 1 -M 1 -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command_with_pool = smart_dispatch_command_with_pool.format('launch ' + self.folded_commands)
         self.nb_workers = 10
 
-        smart_dispatch_command_with_cores = '{} -C 1 -c {{cores}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        smart_dispatch_command_with_cores = '{} -C 1 -M 1 -c {{cores}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command_with_cores = smart_dispatch_command_with_cores.format('launch ' + self.folded_commands, cores='{cores}')
 
         self._cwd = os.getcwd()
