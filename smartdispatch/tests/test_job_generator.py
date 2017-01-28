@@ -64,6 +64,28 @@ class TestJobGenerator(object):
         # Check if needed modules for this queue are included in the PBS file
         assert_equal(job_generator.pbs_list[0].modules, self.modules)
 
+    def test_generate_pbs2_mem(self):
+        # Should need two PBS file
+        command_params = {'mem_per_command': self.mem_per_node // 2}
+        job_generator = JobGenerator(self.queue, self.commands, command_params)
+        assert_equal(len(job_generator.pbs_list), 2)
+        assert_equal(job_generator.pbs_list[0].commands, self.commands[:2])
+        assert_equal(job_generator.pbs_list[1].commands, self.commands[2:])
+
+    def test_generate_pbs4_mem(self):
+        # Should needs four PBS file
+        command_params = {'mem_per_command': self.mem_per_node}
+        job_generator = JobGenerator(self.queue, self.commands, command_params)
+        assert_equal(len(job_generator.pbs_list), 4)
+        assert_equal([pbs.commands[0] for pbs in job_generator.pbs_list], self.commands)
+
+        # Since queue has no gpus it should not be specified in PBS resource `nodes`
+        assert_true('gpus' not in job_generator.pbs_list[0].resources['nodes'])
+
+        # Test modules to load
+        # Check if needed modules for this queue are included in the PBS file
+        assert_equal(job_generator.pbs_list[0].modules, self.modules)
+
     def test_generate_pbs2_gpu(self):
         # Test nb_gpus_per_command argument
         # Should needs two PBS file
