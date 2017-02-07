@@ -36,7 +36,7 @@ class PBS(object):
         self.add_options(q=queue_name)
 
         # Declares that all environment variables in the qsub command's environment are to be exported to the batch job.
-        self.add_options(V="")
+        self.add_options(v="PBS_FILENAME")
 
     def add_options(self, **options):
         """ Adds options to this PBS file.
