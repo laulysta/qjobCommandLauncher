@@ -29,7 +29,7 @@ class TestPBS(unittest.TestCase):
     def test_add_options(self):
         # Default options
         assert_equal(len(self.pbs.options), 2)
-        assert_true('-V' in self.pbs.options.keys())
+        assert_equal(self.pbs.options['-v'], 'PBS_FILENAME')
         assert_equal(self.pbs.options['-q'], self.queue_name)
 
         self.pbs.add_options(A="option1")
@@ -73,7 +73,7 @@ class TestPBS(unittest.TestCase):
         # Create simple PBS file
         expected = """#!/bin/bash
 #PBS -q qtest@mp2
-#PBS -V
+#PBS -v PBS_FILENAME
 #PBS -l walltime=01:00:00
 
 # Modules #
@@ -98,7 +98,7 @@ class TestPBS(unittest.TestCase):
         expected = """\
 #!/bin/bash
 #PBS -q qtest@mp2
-#PBS -V
+#PBS -v PBS_FILENAME
 #PBS -A xyz-123-ab
 #PBS -l walltime=01:00:00
 #PBS -l nodes=2:ppn=3:gpus=1
