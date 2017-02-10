@@ -161,7 +161,7 @@ def main():
 
     command_params = {'nb_cores_per_command': args.coresPerCommand,
                       'nb_gpus_per_command': args.gpusPerCommand,
-                      'mem_per_command': None  # args.memPerCommand
+                      'mem_per_command': args.memPerCommand
                       }
 
     prolog = []

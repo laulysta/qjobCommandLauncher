@@ -83,9 +83,6 @@ class JobGenerator(object):
         # Limit number of running commands by the amount of available memory on the node.
         if self.mem_per_command is not None:
             nb_commands_per_node = min(nb_commands_per_node, self.queue.mem_per_node // self.mem_per_command)
-            mem_per_command = self.mem_per_command
-        else:
-            mem_per_command = self.queue.mem_per_node // nb_commands_per_node
 
         pbs_files = []
         # Distribute equally the jobs among the PBS files and generate those files
@@ -101,8 +98,9 @@ class JobGenerator(object):
                 resource += ":gpus={gpus}".format(gpus=len(commands) * self.nb_gpus_per_command)
             pbs.add_resources(nodes=resource)
 
-            resource = "{mem}Gb".format(mem=len(commands) * mem_per_command)
-            pbs.add_resources(mem=resource)
+            if self.mem_per_command is not None:
+                resource = "{mem}Gb".format(mem=len(commands) * self.mem_per_command)
+                pbs.add_resources(mem=resource)
 
             pbs.add_modules_to_load(*self.queue.modules)
             pbs.add_to_prolog(*self.prolog)
