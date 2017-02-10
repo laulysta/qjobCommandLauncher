@@ -101,9 +101,8 @@ class JobGenerator(object):
                 resource += ":gpus={gpus}".format(gpus=len(commands) * self.nb_gpus_per_command)
             pbs.add_resources(nodes=resource)
 
-            if mem_per_command is not None:
-                resource = "{mem}Gb".format(mem=len(commands) * mem_per_command)
-                pbs.add_resources(mem=resource)
+            resource = "{mem}Gb".format(mem=len(commands) * mem_per_command)
+            pbs.add_resources(mem=resource)
 
             pbs.add_modules_to_load(*self.queue.modules)
             pbs.add_to_prolog(*self.prolog)
