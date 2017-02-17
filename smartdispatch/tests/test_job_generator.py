@@ -67,7 +67,7 @@ class TestJobGenerator(object):
     def test_generate_pbs2_mem(self):
         # Should need two PBS files
         command_params = {'mem_per_command': self.mem_per_node // 2}
-        job_generator = JobGenerator(self.queue, self.commands, command_params)
+        job_generator = JobGenerator(self.queue, self.commands, command_params=command_params)
         assert_equal(len(job_generator.pbs_list), 2)
         assert_equal(job_generator.pbs_list[0].commands, self.commands[:2])
         assert_equal(job_generator.pbs_list[1].commands, self.commands[2:])
@@ -75,7 +75,7 @@ class TestJobGenerator(object):
     def test_generate_pbs4_mem(self):
         # Should need four PBS files
         command_params = {'mem_per_command': self.mem_per_node}
-        job_generator = JobGenerator(self.queue, self.commands, command_params)
+        job_generator = JobGenerator(self.queue, self.commands, command_params=command_params)
         assert_equal(len(job_generator.pbs_list), 4)
         assert_equal([pbs.commands[0] for pbs in job_generator.pbs_list], self.commands)
 
