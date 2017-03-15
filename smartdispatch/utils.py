@@ -70,7 +70,7 @@ def chunks(sequence, n):
 
 def generate_uid_from_string(value):
     """ Create unique identifier from a string. """
-    return hashlib.sha256(value).hexdigest()
+    return hashlib.sha256(value.encode('UTF-8').hexdigest()
 
 
 def slugify(value):
