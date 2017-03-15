@@ -19,7 +19,7 @@ def jobname_generator(jobname, job_id):
     Returns
     -------
     str
-    The cropped version of the string.  
+    The cropped version of the string.
     '''
     # 64 - 1 since the total length including -1 should be less than 64
     job_id = str(job_id)
@@ -119,7 +119,7 @@ def detect_cluster():
         # If qstat is not available we assume that the cluster is unknown.
         return None
     # Get server name from status
-    server_name = output.split('\n')[2].split(' ')[0]
+    server_name = output.decode().split('\n')[2].split(' ')[0]
     # Cleanup the name and return it
     cluster_name = None
     if server_name.split('.')[-1] == 'm':
