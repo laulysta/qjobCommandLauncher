@@ -1,5 +1,11 @@
 from __future__ import print_function
 
+try:
+    _unicode = unicode
+    _utf8 = lambda x: _unicode(x, 'UTF-8')
+except NameError:
+    _utf8 = str
+
 import re
 import hashlib
 import unicodedata
@@ -77,7 +83,7 @@ def slugify(value):
     ---------
     https://github.com/django/django/blob/1.7c3/django/utils/text.py#L436
     """
-    value = unicodedata.normalize('NFKD', unicode(value, "UTF-8")).encode('ascii', 'ignore').decode('ascii')
+    value = unicodedata.normalize('NFKD', _utf8(value)).encode('ascii', 'ignore').decode('ascii')
     value = re.sub('[^\w\s-]', '', value).strip().lower()
     return str(re.sub('[-\s]+', '_', value))
 
