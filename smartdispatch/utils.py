@@ -4,8 +4,9 @@ from builtins import str
 from builtins import input
 from builtins import map
 from builtins import range
+
 try:
-    _unicode = str
+    _unicode = unicode
     _utf8 = lambda x: _unicode(x, 'UTF-8')
 except NameError:
     _utf8 = str
