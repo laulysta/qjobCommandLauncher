@@ -15,6 +15,7 @@ import re
 import hashlib
 import unicodedata
 import json
+import codecs
 
 from distutils.util import strtobool
 from subprocess import Popen, PIPE
@@ -96,7 +97,7 @@ def slugify(value):
 def encode_escaped_characters(text, escaping_character="\\"):
     """ Escape the escaped character using its hex representation """
     def hexify(match):
-        return "\\x{0}".format(match.group()[-1].encode("hex"))
+        return codecs.encode("\\x{0}".format(match.group()[-1], 'hex_codec'))
 
     return re.sub(r"\\.", hexify, text)
 
