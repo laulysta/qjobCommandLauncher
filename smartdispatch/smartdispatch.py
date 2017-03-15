@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function
 
+from builtins import next
+from builtins import map
 import os
 import re
 import itertools
@@ -89,7 +91,7 @@ def unfold_command(command):
     text = utils.encode_escaped_characters(command)
 
     # Build the master regex with all argument's regex
-    regex = "(" + "|".join(["(?P<{0}>{1})".format(name, arg.regex) for name, arg in argument_templates.items()]) + ")"
+    regex = "(" + "|".join(["(?P<{0}>{1})".format(name, arg.regex) for name, arg in list(argument_templates.items())]) + ")"
 
     pos = 0
     arguments = []
@@ -98,12 +100,12 @@ def unfold_command(command):
         arguments.append([text[pos:match.start()]])
 
         # Unfold argument
-        argument_template_name, matched_text = next((k, v) for k, v in match.groupdict().items() if v is not None)
+        argument_template_name, matched_text = next((k, v) for k, v in list(match.groupdict().items()) if v is not None)
         arguments.append(argument_templates[argument_template_name].unfold(matched_text))
         pos = match.end()
 
     arguments.append([text[pos:]])  # Add remaining unfolded arguments
-    arguments = [map(utils.decode_escaped_characters, argvalues) for argvalues in arguments]
+    arguments = [list(map(utils.decode_escaped_characters, argvalues)) for argvalues in arguments]
     return ["".join(argvalues) for argvalues in itertools.product(*arguments)]
 
 

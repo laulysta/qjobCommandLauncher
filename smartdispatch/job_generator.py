@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from builtins import str
+from builtins import object
 import os
 import re
 from smartdispatch.pbs import PBS

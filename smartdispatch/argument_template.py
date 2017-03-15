@@ -1,3 +1,6 @@
+from builtins import map
+from builtins import range
+from builtins import object
 import re
 from collections import OrderedDict
 
@@ -35,7 +38,7 @@ class RangeArgumentTemplate(ArgumentTemplate):
         start = int(groups[0])
         end = int(groups[1])
         step = 1 if groups[2] is None else int(groups[2])
-        return map(str, range(start, end, step))
+        return list(map(str, list(range(start, end, step))))
 
 
 argument_templates = build_argument_templates_dictionnary()

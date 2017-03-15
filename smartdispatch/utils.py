@@ -1,7 +1,11 @@
 from __future__ import print_function
 
+from builtins import str
+from builtins import input
+from builtins import map
+from builtins import range
 try:
-    _unicode = unicode
+    _unicode = str
     _utf8 = lambda x: _unicode(x, 'UTF-8')
 except NameError:
     _utf8 = str
@@ -38,7 +42,7 @@ def jobname_generator(jobname, job_id):
 
 def print_boxed(string):
     splitted_string = string.split('\n')
-    max_len = max(map(len, splitted_string))
+    max_len = max(list(map(len, splitted_string)))
     box_line = u"\u2500" * (max_len + 2)
 
     out = u"\u250c" + box_line + u"\u2510\n"
@@ -55,7 +59,7 @@ def yes_no_prompt(query, default=None):
 
     while True:
         try:
-            answer = raw_input("{0}{1}".format(query, available_prompts[default]))
+            answer = eval(input("{0}{1}".format(query, available_prompts[default])))
             return strtobool(answer)
         except ValueError:
             if answer == '' and default is not None:
@@ -64,13 +68,13 @@ def yes_no_prompt(query, default=None):
 
 def chunks(sequence, n):
     """ Yield successive n-sized chunks from sequence. """
-    for i in xrange(0, len(sequence), n):
+    for i in range(0, len(sequence), n):
         yield sequence[i:i + n]
 
 
 def generate_uid_from_string(value):
     """ Create unique identifier from a string. """
-    return hashlib.sha256(value.encode('UTF-8').hexdigest()
+    return hashlib.sha256(value.encode('UTF-8')).hexdigest()
 
 
 def slugify(value):
