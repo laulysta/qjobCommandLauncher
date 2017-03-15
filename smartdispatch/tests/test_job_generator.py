@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import object
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
 import os
