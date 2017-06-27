@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from builtins import zip
+from builtins import range
 import unittest
 
 from smartdispatch import utils
@@ -21,11 +23,11 @@ class PrintBoxedTests(unittest.TestCase):
 
 
 def test_chunks():
-    sequence = range(10)
+    sequence = list(range(10))
 
     for n in range(1, 11):
         expected = []
-        for start, end in zip(range(0, len(sequence), n), range(n, len(sequence) + n, n)):
+        for start, end in zip(list(range(0, len(sequence), n)), list(range(n, len(sequence) + n, n))):
             expected.append(sequence[start:end])
 
         assert_array_equal(list(utils.chunks(sequence, n)), expected, "n:{0}".format(n))

@@ -1,4 +1,6 @@
-from smartdispatch import get_available_queues
+from __future__ import absolute_import
+from builtins import object
+from .smartdispatch import get_available_queues
 
 
 class Queue(object):

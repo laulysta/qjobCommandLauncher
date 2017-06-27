@@ -1,7 +1,21 @@
+from __future__ import print_function
+
+from builtins import str
+from builtins import input
+from builtins import map
+from builtins import range
+
+try:
+    _unicode = unicode
+    _utf8 = lambda x: _unicode(x, 'UTF-8')
+except NameError:
+    _utf8 = str
+
 import re
 import hashlib
 import unicodedata
 import json
+import codecs
 
 from distutils.util import strtobool
 from subprocess import Popen, PIPE
@@ -17,7 +31,7 @@ def jobname_generator(jobname, job_id):
     Returns
     -------
     str
-    The cropped version of the string.  
+    The cropped version of the string.
     '''
     # 64 - 1 since the total length including -1 should be less than 64
     job_id = str(job_id)
@@ -30,13 +44,13 @@ def jobname_generator(jobname, job_id):
 
 def print_boxed(string):
     splitted_string = string.split('\n')
-    max_len = max(map(len, splitted_string))
+    max_len = max(list(map(len, splitted_string)))
     box_line = u"\u2500" * (max_len + 2)
 
     out = u"\u250c" + box_line + u"\u2510\n"
     out += '\n'.join([u"\u2502 {} \u2502".format(line.ljust(max_len)) for line in splitted_string])
     out += u"\n\u2514" + box_line + u"\u2518"
-    print out
+    print(out)
 
 
 def yes_no_prompt(query, default=None):
@@ -47,7 +61,7 @@ def yes_no_prompt(query, default=None):
 
     while True:
         try:
-            answer = raw_input("{0}{1}".format(query, available_prompts[default]))
+            answer = eval(input("{0}{1}".format(query, available_prompts[default])))
             return strtobool(answer)
         except ValueError:
             if answer == '' and default is not None:
@@ -56,13 +70,13 @@ def yes_no_prompt(query, default=None):
 
 def chunks(sequence, n):
     """ Yield successive n-sized chunks from sequence. """
-    for i in xrange(0, len(sequence), n):
+    for i in range(0, len(sequence), n):
         yield sequence[i:i + n]
 
 
 def generate_uid_from_string(value):
     """ Create unique identifier from a string. """
-    return hashlib.sha256(value).hexdigest()
+    return hashlib.sha256(value.encode('UTF-8')).hexdigest()
 
 
 def slugify(value):
@@ -75,7 +89,7 @@ def slugify(value):
     ---------
     https://github.com/django/django/blob/1.7c3/django/utils/text.py#L436
     """
-    value = unicodedata.normalize('NFKD', unicode(value, "UTF-8")).encode('ascii', 'ignore').decode('ascii')
+    value = unicodedata.normalize('NFKD', _utf8(value)).encode('ascii', 'ignore').decode('ascii')
     value = re.sub('[^\w\s-]', '', value).strip().lower()
     return str(re.sub('[-\s]+', '_', value))
 
@@ -83,7 +97,7 @@ def slugify(value):
 def encode_escaped_characters(text, escaping_character="\\"):
     """ Escape the escaped character using its hex representation """
     def hexify(match):
-        return "\\x{0}".format(match.group()[-1].encode("hex"))
+        return codecs.encode("\\x{0}".format(match.group()[-1], 'hex_codec'))
 
     return re.sub(r"\\.", hexify, text)
 
@@ -117,7 +131,7 @@ def detect_cluster():
         # If qstat is not available we assume that the cluster is unknown.
         return None
     # Get server name from status
-    server_name = output.split('\n')[2].split(' ')[0]
+    server_name = output.decode().split('\n')[2].split(' ')[0]
     # Cleanup the name and return it
     cluster_name = None
     if server_name.split('.')[-1] == 'm':

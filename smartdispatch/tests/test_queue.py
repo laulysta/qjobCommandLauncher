@@ -35,7 +35,7 @@ class TestQueue(unittest.TestCase):
 
         # Test with missing information but referring to a known queue.
         for cluster_name in self.known_clusters:
-            for queue_name, queue_infos in get_available_queues(cluster_name).items():
+            for queue_name, queue_infos in list(get_available_queues(cluster_name).items()):
                 queue = Queue(queue_name, cluster_name)
                 assert_equal(queue.name, queue_name)
                 assert_equal(queue.cluster_name, cluster_name)

@@ -1,3 +1,4 @@
+from builtins import object
 import os
 from .filelock import open_with_lock
 

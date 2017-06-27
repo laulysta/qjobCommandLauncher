@@ -1,3 +1,4 @@
+from builtins import str
 from nose.tools import assert_true, assert_equal, assert_raises
 from numpy.testing import assert_array_equal
 
@@ -29,7 +30,7 @@ class TestPBS(unittest.TestCase):
     def test_add_options(self):
         # Default options
         assert_equal(len(self.pbs.options), 2)
-        assert_true('-V' in self.pbs.options.keys())
+        assert_true('-V' in list(self.pbs.options.keys()))
         assert_equal(self.pbs.options['-q'], self.queue_name)
 
         self.pbs.add_options(A="option1")

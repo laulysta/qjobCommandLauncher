@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import object
 import re
 from collections import OrderedDict
 
@@ -54,7 +56,7 @@ class PBS(object):
             Declares a name for the job. It must consist of printable,
             non white space characters with the first character alphabetic.
         """
-        for option_name, option_value in options.items():
+        for option_name, option_value in list(options.items()):
             # If known option, validate it.
             if option_name.strip('-') == 'N':
                 if len(option_name) > 64:
@@ -81,7 +83,7 @@ class PBS(object):
         *pmem*: pmem=[0-9]+(b|kb|mb|gb|tb)
             Specifies the maximum amount of physical memory used by any single process of the job.
         """
-        for resource_name, resource_value in resources.items():
+        for resource_name, resource_value in list(resources.items()):
             # If known ressource, validate it.
             if resource_name == 'nodes':
                 if re.match(regex_resource_nodes, str(resource_value)) is None:
@@ -150,13 +152,13 @@ class PBS(object):
         pbs = []
         pbs += ["#!/bin/bash"]
 
-        for option_name, option_value in self.options.items():
+        for option_name, option_value in list(self.options.items()):
             if option_value == "":
                 pbs += ["#PBS {0}".format(option_name)]
             else:
                 pbs += ["#PBS {0} {1}".format(option_name, option_value)]
 
-        for resource_name, resource_value in self.resources.items():
+        for resource_name, resource_value in list(self.resources.items()):
             pbs += ["#PBS -l {0}={1}".format(resource_name, resource_value)]
 
         pbs += ["\n# Modules #"]

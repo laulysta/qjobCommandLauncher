@@ -114,6 +114,6 @@ class TestSmartWorker(unittest.TestCase):
             time.sleep(1)
 
         stdout, stderr = process.communicate()
-        assert_equal(stdout, "")
+        assert_equal(stdout, b"")
         assert_true("write-lock" in stderr, msg="Forcing a race condition, try increasing sleeping time above.")
         assert_true("Traceback" not in stderr)  # Check that there are no errors.
