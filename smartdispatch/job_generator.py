@@ -46,7 +46,7 @@ class JobGenerator(object):
 
         self.nb_cores_per_command = command_params.get('nb_cores_per_command', 1)
         self.nb_gpus_per_command = command_params.get('nb_gpus_per_command', 1)
-        #self.mem_per_command = command_params.get('mem_per_command', 0.0)
+        self.mem_per_command = command_params.get('mem_per_command', None)
 
         self.pbs_list = self._generate_base_pbs()
         self._add_cluster_specific_rules()
@@ -80,6 +80,10 @@ class JobGenerator(object):
         if self.queue.nb_gpus_per_node > 0 and self.nb_gpus_per_command > 0:
             nb_commands_per_node = min(nb_commands_per_node, self.queue.nb_gpus_per_node // self.nb_gpus_per_command)
 
+        # Limit number of running commands by the amount of available memory on the node.
+        if self.mem_per_command is not None:
+            nb_commands_per_node = min(nb_commands_per_node, self.queue.mem_per_node // self.mem_per_command)
+
         pbs_files = []
         # Distribute equally the jobs among the PBS files and generate those files
         for i, commands in enumerate(utils.chunks(self.commands, n=nb_commands_per_node)):
@@ -92,8 +96,11 @@ class JobGenerator(object):
             resource = "1:ppn={ppn}".format(ppn=len(commands) * self.nb_cores_per_command)
             if self.queue.nb_gpus_per_node > 0:
                 resource += ":gpus={gpus}".format(gpus=len(commands) * self.nb_gpus_per_command)
-
             pbs.add_resources(nodes=resource)
+
+            if self.mem_per_command is not None:
+                resource = "{mem}Gb".format(mem=len(commands) * self.mem_per_command)
+                pbs.add_resources(mem=resource)
 
             pbs.add_modules_to_load(*self.queue.modules)
             pbs.add_to_prolog(*self.prolog)

@@ -23,16 +23,19 @@ class TestSmartdispatcher(unittest.TestCase):
         self.nb_commands = len(self.commands)
 
         scripts_path = abspath(pjoin(os.path.dirname(__file__), os.pardir, "scripts"))
-        self.smart_dispatch_command = '{} -C 1 -q test -t 5:00 -x'.format(pjoin(scripts_path, 'smart-dispatch'))
+        self.smart_dispatch_command = '{} -C 1 -M 1 -q test -t 5:00 -x'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command = "{0} launch {1}".format(self.smart_dispatch_command, self.folded_commands)
         self.resume_command = "{0} resume {{0}}".format(self.smart_dispatch_command)
 
-        smart_dispatch_command_with_pool = '{} --pool 10 -C 1 -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        smart_dispatch_command_with_pool = '{} --pool 10 -C 1 -M 1 -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command_with_pool = smart_dispatch_command_with_pool.format('launch ' + self.folded_commands)
         self.nb_workers = 10
 
-        smart_dispatch_command_with_cores = '{} -C 1 -c {{cores}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        smart_dispatch_command_with_cores = '{} -C 1 -M 1 -c {{cores}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command_with_cores = smart_dispatch_command_with_cores.format('launch ' + self.folded_commands, cores='{cores}')
+
+        smart_dispatch_command_with_memory = '{} -C 1 -M 1 -m {{memory}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        self.launch_command_with_memory = smart_dispatch_command_with_memory.format('launch ' + self.folded_commands, memory='{memory}')
 
         self._cwd = os.getcwd()
         os.chdir(self.testing_dir)
@@ -92,6 +95,18 @@ class TestSmartdispatcher(unittest.TestCase):
 
         # Test validation
         assert_equal(exit_status_0, 2)
+        assert_equal(exit_status_100, 2)        
+        assert_true(os.path.isdir(self.logs_dir))
+
+    def test_main_launch_with_memory_command(self):
+        # Actual test
+        exit_status_0 = call(self.launch_command_with_memory.format(memory=0), shell=True)
+        exit_status_05 = call(self.launch_command_with_memory.format(memory=0.5), shell=True)
+        exit_status_100 = call(self.launch_command_with_memory.format(memory=100), shell=True)
+
+        # Test validation
+        assert_equal(exit_status_0, 2)
+        assert_equal(exit_status_05, 0)
         assert_equal(exit_status_100, 2)        
         assert_true(os.path.isdir(self.logs_dir))
 
