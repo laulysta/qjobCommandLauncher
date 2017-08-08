@@ -60,10 +60,48 @@ class TestSlurm(unittest.TestCase):
             job_id = stdout.split(" ")[-1]
 
             time.sleep(0.25)
-            process = Popen("squeue -u $USER -O qos", stdout=PIPE, stderr=PIPE, shell=True)
+            process = Popen("squeue -u $USER -j {} -O qos".format(job_id), stdout=PIPE, stderr=PIPE, shell=True)
             stdout, stderr = process.communicate()
             job_priorities = [prio.strip() for prio in stdout.split("\n")[1:] if prio != '']
-            assert_true(all(prio == priority for prio in job_priorities))
+            assert_true(all(pri == priority for pri in job_priorities))
+
+    def test_gres(self):
+        gress = ['gpu', 'gpu:titanblack']
+        for gres in gress:
+            string = pbs_string.format(
+                "#PBS -l gpu={gres}".format(gres=gres)
+            )
+            with open("test.pbs", "w") as text_file:
+                text_file.write(string)
+            process = Popen("sbatch test.pbs", stdout=PIPE, stderr=PIPE, shell=True)
+            stdout, stderr = process.communicate()
+            assert_true("Submitted batch job" in stdout)
+            job_id = stdout.split(" ")[-1]
+
+            time.sleep(0.25)
+            process = Popen("squeue -u $USER -j {} -O gres".format(job_id), stdout=PIPE, stderr=PIPE, shell=True)
+            stdout, stderr = process.communicate()
+            job_gres = [gre.strip() for gre in stdout.split("\n")[1:] if gre != '']
+            assert_true(all(gpu == gres for gpu in job_gres))
+
+    def test_memory(self):
+        mems = ['2G', '4G']
+        for mem in mems:
+            string = pbs_string.format(
+                "#PBS -l mem_free={memory}".format(memory=mem)
+            )
+            with open("test.pbs", "w") as text_file:
+                text_file.write(string)
+            process = Popen("sbatch test.pbs", stdout=PIPE, stderr=PIPE, shell=True)
+            stdout, stderr = process.communicate()
+            assert_true("Submitted batch job" in stdout)
+            job_id = stdout.split(" ")[-1]
+
+            time.sleep(0.25)
+            process = Popen("squeue -u $USER -j {} -O minmemory".format(job_id), stdout=PIPE, stderr=PIPE, shell=True)
+            stdout, stderr = process.communicate()
+            job_mems = [m.strip() for m in stdout.split("\n")[1:] if m != '']
+            assert_true(all(me == mem for me in job_mems))
 
     # def test_pbs_slurm(self):
     #     priorities = ['unkillable', 'high', 'low']
