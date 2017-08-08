@@ -11,10 +11,11 @@ Hierarchy of generated files
 
 In order to understand the contents of the generated folders/files, it's good to know how ``smart-dispatch`` deals with **commands** that a user requests to launch on the cluster:
 
-* Each invokation of ``smart-dispatch`` creates a so-called **batch** of **jobs**. Smart Dispatch will do its best to create as many simultaneous jobs so as to effecitvely utilze the allocated resources.
+* Smart Dispatch will distribute commands to jobs such that each of the latter uses an entire node. Jobs may run many commands concurrently if necessary to use a maximum number of cores and GPUs. The distribution is based on number of cores per node / per command and number of GPUs per node / per command.
+
 * Each job is basically a single PBS file that is run by the queue management system on the cluster (either ``msub`` or ``qsub``).
-* A job spawns mulitple concurrent **workers** that all cooperate to execute the requested commands.
-* Each worker (basically, a python script) is executing commands sequentially.
+* A job spawns multiple concurrent **workers** that all cooperate to execute the requested commands.
+* Each worker is executing commands sequentially.
 
 A typical hierarchy of ``./SMART_DISPATCH_LOGS/{batch_id}/`` should look like this: ::
 
@@ -58,7 +59,7 @@ Now let's go through the subdirectories.
 This directory holds generated PBS files (``job_commands_{pbs_index}.sh``) as well as three command lists:
 
 ``commands.txt``:
-    A list pending commands (this is where the workers are taking their next commands to execute from).
+    A list of pending commands (this is where the workers are taking their next commands to execute from).
 ``running_commands.txt``:
     A list of currently running commands.
 ``failed_commands.txt``:
@@ -68,7 +69,7 @@ This directory holds generated PBS files (``job_commands_{pbs_index}.sh``) as we
 ``logs/``
 ^^^^^^^^^
 
-Output and error logs in are saved in this directory. The root level contains logs for actual commands. There are also two additional subfolder:
+Output and error logs are saved in this directory. The root level contains logs for actual commands. There are also two additional subfolders:
 
 ``job/``:
     Holds logs for the PBS files.

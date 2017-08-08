@@ -10,5 +10,5 @@ tasks as soon as they hit the walltime. The caveat here is that your tasks
 **must be resumable**, i.e. be capable of restoring their state after being
 killed and rerun.
 
-You can engage the autoresumption by passing ``-m`` or ``--autoresume`` during
+You can engage the autoresumption by passing ``-r`` or ``--autoresume`` during
 ``smart-dispatch`` execution. See :doc:`usage` for details. 
