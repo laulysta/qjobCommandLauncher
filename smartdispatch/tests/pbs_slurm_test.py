@@ -42,10 +42,10 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 nvidia-smi
 """
 
-def test_param(self, param_array, command, flag, string=pbs_string):
+def test_param(param_array, com, flag, string=pbs_string):
     for param in param_array:
         command = pbs_string.format(
-            string.format(command.format(param))
+            string.format(com.format(param))
         )
         with open("test.pbs", "w") as text_file:
             text_file.write(command)
@@ -58,12 +58,13 @@ def test_param(self, param_array, command, flag, string=pbs_string):
         process = Popen("squeue -u $USER -j {} -O {}".format(job_id, flag), stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
         job_params = [c.strip() for c in stdout.split("\n")[1:] if c != '']
+        # import ipdb; ipdb.set_trace()
         assert_true(all(p == param for p in job_params))
 
 class TestSlurm(unittest.TestCase):
 
     def tearDown(self):
-        process = Popen("rm *.out", stdout=PIPE, stderr=PIPE, shell=True)
+        process = Popen("rm *.out test.pbs", stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
 
     def test_priority(self):
@@ -76,7 +77,7 @@ class TestSlurm(unittest.TestCase):
 
     def test_gres(self):
         test_param(
-            ['titanblack],
+            ['titanblack'],
             "#PBS -l naccelerators={}",
             "gres",
             pbs_string
@@ -94,31 +95,39 @@ class TestSlurm(unittest.TestCase):
         test_param(
             ["1", "2"],
             "PBS -l ncpus={}",
-            "cpuspertask", # or numcpus
+            "numcpus",
             pbs_string
         )
 
+    def test_constraint(self):
+        test_param(
+            ["gpu6gb", "gpu8gb"],
+            "PBS -l proc={}",
+            "feature",
+            pbs_string
+        )
 
-pbs_string2 = """\
-#!/usr/bin/env /bin/bash
-
-#PBS -N arrayJob
-#PBS -o arrayJob_%A_%a.out
-#PBS -t 1-5
-#PBS -l walltime=01:00:00
-#PBS -l naccelerators=1
-#PBS -l proc={cons}
-#PBS -M {mail}
-#SBATCH --qos {priority}
-
-######################
-# Begin work section #
-######################
-
-echo "My SLURM_ARRAY_JOB_ID:" $SLURM_ARRAY_JOB_ID
-echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
-nvidia-smi
-"""
+#
+# pbs_string2 = """\
+# #!/usr/bin/env /bin/bash
+#
+# #PBS -N arrayJob
+# #PBS -o arrayJob_%A_%a.out
+# #PBS -t 1-5
+# #PBS -l walltime=01:00:00
+# #PBS -l naccelerators=1
+# #PBS -l proc={cons}
+# #PBS -M {mail}
+# #SBATCH --qos {priority}
+#
+# ######################
+# # Begin work section #
+# ######################
+#
+# echo "My SLURM_ARRAY_JOB_ID:" $SLURM_ARRAY_JOB_ID
+# echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
+# nvidia-smi
+# """
 
 if __name__ == '__main__':
     unittest.main()
