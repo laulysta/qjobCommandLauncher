@@ -155,6 +155,13 @@ def main():
                          .format(req_cores=args.coresPerCommand, node_cores=queue.nb_cores_per_node))
         sys.exit(2)
 
+    # Check that requested gpu number does not exceed node total
+    if args.gpusPerCommand > queue.nb_gpus_per_node:
+        sys.stderr.write("smart-dispatch: error: gpusPerCommand exceeds nodes total: asked {req_gpus} gpus, nodes have {node_gpus}\n"
+                         .format(req_gpus=args.gpusPerCommand, node_gpus=queue.nb_gpus_per_node))
+        sys.exit(2)
+
+
     command_params = {'nb_cores_per_command': args.coresPerCommand,
                       'nb_gpus_per_command': args.gpusPerCommand,
                       'mem_per_command': None  # args.memPerCommand
