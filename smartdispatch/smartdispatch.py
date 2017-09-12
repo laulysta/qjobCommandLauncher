@@ -5,8 +5,7 @@ import re
 import itertools
 import time as t
 from os.path import join as pjoin
-from subprocess import check_output
-
+import subprocess
 import smartdispatch
 from smartdispatch import utils
 from smartdispatch.filelock import open_with_lock
@@ -183,13 +182,13 @@ def launch_jobs(launcher, pbs_filenames, cluster_name, path_job):  # pragma: no 
     '''
     jobs_id = []
     for pbs_filename in pbs_filenames:
-        launcher_output = check_output('PBS_FILENAME={pbs_filename} {launcher} {pbs_filename}'.format(
+        launcher_output = subprocess.check_output('PBS_FILENAME={pbs_filename} {launcher} {pbs_filename}'.format(
             launcher=launcher, pbs_filename=pbs_filename), shell=True)
         jobs_id += [launcher_output.strip()]
 
         # On some clusters, SRMJID and PBS_JOBID don't match
         if cluster_name in ['helios']:
-            launcher_output = check_output(['qstat', '-f']).split('Job Id: ')
+            launcher_output = subprocess.check_output(['qstat', '-f']).split('Job Id: ')
             for job in launcher_output:
                 if re.search(r"SRMJID:{job_id}".format(job_id=jobs_id[-1]), job):
                     pbs_job_id = re.match(r"[0-9a-zA-Z.-]*", job).group()
