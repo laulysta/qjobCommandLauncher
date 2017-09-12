@@ -8,7 +8,7 @@ from textwrap import dedent
 
 import smartdispatch
 from command_manager import CommandManager
-
+import subprocess
 from queue import Queue
 from job_generator import job_generator_factory
 from smartdispatch import get_available_queues
@@ -45,11 +45,11 @@ fi
 """.format(timeout_exit_code=TIMEOUT_EXIT_CODE)
 
 
-def main():
+def main(argv=None):
     # Necessary if we want 'logging.info' to appear in stderr.
     logging.root.setLevel(logging.INFO)
 
-    args = parse_arguments()
+    args = parse_arguments(argv)
     path_smartdispatch_logs = pjoin(os.getcwd(), LOGS_FOLDERNAME)
 
     # Check if RESUME or LAUNCH mode
@@ -187,11 +187,21 @@ def main():
     print "## {nb_commands} command(s) will be executed in {nb_jobs} job(s) ##".format(nb_commands=nb_commands, nb_jobs=len(pbs_filenames))
     print "Batch UID:\n{batch_uid}".format(batch_uid=jobname)
     if not args.doNotLaunch:
-        launch_jobs(LAUNCHER if args.launcher is None else args.launcher, pbs_filenames, CLUSTER_NAME, path_job)
+        
+        try:
+            launch_jobs(LAUNCHER if args.launcher is None else args.launcher, pbs_filenames, CLUSTER_NAME, path_job)
+        except subprocess.CalledProcessError as e:
+            sys.stderr.write("smart-dispatch: error: The launcher wasn't able the launch the job(s) properly. Maybe the pbs file(s) generated were invalid: \n{}".format(e.output))
+            sys.exit(2)
+
     print "\nLogs, command, and jobs id related to this batch will be in:\n {smartdispatch_folder}".format(smartdispatch_folder=path_job)
 
 
-def parse_arguments():
+def parse_arguments(argv=None):
+
+    if argv is None:
+        argv = sys.argv[1:]
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', '--queueName', required=True, help='Queue used (ex: qwork@mp2, qfat256@mp2, gpu_1)')
     parser.add_argument('-n', '--batchName', required=False, help='The name of the batch. Default: The commands launched.')
@@ -221,7 +231,7 @@ def parse_arguments():
     resume_parser.add_argument('--expandPool', type=int, nargs='?', const=sys.maxsize, help='Add workers to the given batch. Default: # pending jobs.')
     resume_parser.add_argument("batch_uid", help="Batch UID of the jobs to resume.")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Check for invalid arguments in
     if args.mode == "launch":
