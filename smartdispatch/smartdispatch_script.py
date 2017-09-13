@@ -191,7 +191,7 @@ def main(argv=None):
         try:
             launch_jobs(LAUNCHER if args.launcher is None else args.launcher, pbs_filenames, CLUSTER_NAME, path_job)
         except subprocess.CalledProcessError as e:
-            sys.stderr.write("smart-dispatch: error: The launcher wasn't able the launch the job(s) properly. Maybe the pbs file(s) generated were invalid: \n{}".format(e.output))
+            sys.stderr.write("smart-dispatch: error: The launcher wasn't able the launch the job(s) properly. Maybe the pbs file(s) generated were invalid. The following error message was returned: \n{}".format(e.output))
             sys.exit(2)
 
     print "\nLogs, command, and jobs id related to this batch will be in:\n {smartdispatch_folder}".format(smartdispatch_folder=path_job)
