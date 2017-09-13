@@ -17,7 +17,7 @@ class TestSmartScript(unittest.TestCase):
 
     def test_gpu_check(self):
 
-        argv = ['-x', '-g', '2', '-G', '1', '-q', 'gpu_1', 'launch', 'echo', 'testing123']
+        argv = ['-x', '-g', '2', '-G', '1', '-C', '1', '-q', 'random', '-t', '10' ,'launch', 'echo', 'testing123']
 
         with self.assertRaises(SystemExit) as context:
             smartdispatch_script.main(argv=argv)
@@ -26,7 +26,7 @@ class TestSmartScript(unittest.TestCase):
 
     def test_cpu_check(self):
 
-        argv = ['-x', '-c', '2', '-C', '1', '-q', 'gpu_1', 'launch', 'echo', 'testing123']
+        argv = ['-x', '-c', '2', '-C', '1', '-G', '1', '-t', '10', '-q', 'random', 'launch', 'echo', 'testing123']
 
         with self.assertRaises(SystemExit) as context:
             smartdispatch_script.main(argv=argv)
@@ -37,7 +37,7 @@ class TestSmartScript(unittest.TestCase):
     def test_launch_job_check(self, mock_check_output):
 
         mock_check_output.side_effect = subprocess.CalledProcessError(1, 1, "A wild error appeared!")
-        argv = ['-q', 'gpu_1', 'launch', 'echo', 'testing123']
+        argv = ['-t', '0:0:1', '-G', '1', '-C', '1', '-q', 'random', 'launch', 'echo', 'testing123']
 
         try:
             with self.assertRaises(SystemExit) as context:
