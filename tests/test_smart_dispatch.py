@@ -3,11 +3,11 @@ import unittest
 import tempfile
 import shutil
 from os.path import join as pjoin, abspath
-
+from mock import patch
 from subprocess import call
-
+import subprocess
 from nose.tools import assert_true, assert_equal
-
+from smartdispatch import smartdispatch_script
 
 class TestSmartdispatcher(unittest.TestCase):
 
@@ -23,16 +23,22 @@ class TestSmartdispatcher(unittest.TestCase):
         self.nb_commands = len(self.commands)
 
         scripts_path = abspath(pjoin(os.path.dirname(__file__), os.pardir, "scripts"))
-        self.smart_dispatch_command = '{} -C 1 -q test -t 5:00 -x'.format(pjoin(scripts_path, 'smart-dispatch'))
+        self.smart_dispatch_command = '{} -C 1 -G 1 -q test -t 5:00 -x'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command = "{0} launch {1}".format(self.smart_dispatch_command, self.folded_commands)
         self.resume_command = "{0} resume {{0}}".format(self.smart_dispatch_command)
 
-        smart_dispatch_command_with_pool = '{} --pool 10 -C 1 -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        self.smart_dispatch_launcher_command = '{} -C 1 -G 1 -q test -t 5:00'.format(pjoin(scripts_path, 'smart-dispatch'))
+        self.launcher_command = "{0} launch {1}".format(self.smart_dispatch_launcher_command, self.folded_commands)
+
+        smart_dispatch_command_with_pool = '{} --pool 10 -C 1 -G 1 -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command_with_pool = smart_dispatch_command_with_pool.format('launch ' + self.folded_commands)
         self.nb_workers = 10
 
-        smart_dispatch_command_with_cores = '{} -C 1 -c {{cores}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        smart_dispatch_command_with_cores = '{} -C 1 -G 1 -c {{cores}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
         self.launch_command_with_cores = smart_dispatch_command_with_cores.format('launch ' + self.folded_commands, cores='{cores}')
+
+        smart_dispatch_command_with_gpus = '{} -C 1 -G 1 -g {{gpus}} -q test -t 5:00 -x {{0}}'.format(pjoin(scripts_path, 'smart-dispatch'))
+        self.launch_command_with_gpus = smart_dispatch_command_with_gpus.format('launch ' + self.folded_commands, gpus='{gpus}')
 
         self._cwd = os.getcwd()
         os.chdir(self.testing_dir)
@@ -94,6 +100,31 @@ class TestSmartdispatcher(unittest.TestCase):
         assert_equal(exit_status_0, 2)
         assert_equal(exit_status_100, 2)        
         assert_true(os.path.isdir(self.logs_dir))
+
+    def test_main_launch_with_gpus_command(self):
+        # Actual test
+        exit_status_100 = call(self.launch_command_with_gpus.format(gpus=100), shell=True)
+
+        # Test validation
+        assert_equal(exit_status_100, 2)
+        assert_true(os.path.isdir(self.logs_dir))
+
+    @patch('subprocess.check_output')
+    def test_launch_job_check(self, mock_check_output):
+
+        #For this test, we won't call the script directly, since we want to mock subprocess.check_output
+        mock_check_output.side_effect = subprocess.CalledProcessError(1, 1, "A wild error appeared!")
+        argv = ['-t', '0:0:1', '-G', '1', '-C', '1', '-q', 'random', 'launch', 'echo', 'testing123']
+
+        try:
+            with self.assertRaises(SystemExit) as context:
+                smartdispatch_script.main(argv=argv)
+
+                self.assertTrue(context.exception.code, 2)
+
+        except subprocess.CalledProcessError:
+            self.fail("smartdispatch_script.main() raised CalledProcessError unexpectedly!")
+
 
     def test_main_resume(self):
         # Setup
