@@ -29,7 +29,7 @@ TIMEOUT_EXIT_CODE = 124
 AUTORESUME_TRIGGER_AFTER = '$(($PBS_WALLTIME - 60))'  # By default, 60s before the maximum walltime.
 AUTORESUME_WORKER_CALL_PREFIX = 'timeout -s TERM {trigger_after} '.format(trigger_after=AUTORESUME_TRIGGER_AFTER)
 AUTORESUME_WORKER_CALL_SUFFIX = ' WORKER_PIDS+=" $!"'
-AUTORESUME_PROLOG = 'WORKER_PIDS=""' 
+AUTORESUME_PROLOG = 'WORKER_PIDS=""'
 AUTORESUME_EPILOG = """\
 NEED_TO_RESUME=false
 for WORKER_PID in $WORKER_PIDS; do
@@ -167,14 +167,17 @@ def main():
         epilog = [AUTORESUME_EPILOG.format(launcher=LAUNCHER if args.launcher is None else args.launcher, path_job=path_job)]
 
     job_generator = job_generator_factory(queue, commands, prolog, epilog, command_params, CLUSTER_NAME, path_job)
-    
+
     # generating default names per each jobs in each batch
     for pbs_id, pbs in enumerate(job_generator.pbs_list):
         proper_size_name = utils.jobname_generator(jobname, pbs_id)
         pbs.add_options(N=proper_size_name)
-    
+
     if args.pbsFlags is not None:
         job_generator.add_pbs_flags(args.pbsFlags.split(' '))
+
+    if args.sbatchFlags is not None:
+        job_generator.add_sbatch_flags(args.sbatchFlags.split(' '))
     pbs_filenames = job_generator.write_pbs_files(path_job_commands)
 
     # Launch the jobs
@@ -206,6 +209,7 @@ def parse_arguments():
 
     parser.add_argument('-p', '--pool', type=int, help="Number of workers that will be consuming commands. Default: Nb commands")
     parser.add_argument('--pbsFlags', type=str, help='ADVANCED USAGE: Allow to pass a space seperated list of PBS flags. Ex:--pbsFlags="-lfeature=k80 -t0-4"')
+    parser.add_argument('--sbatchFlags', type=str, help='ADVANCED USAGE: Allow to pass a space seperated list of SBATCH flags. Ex:--sbatchFlags="-qos=high --output=file.out"')
     subparsers = parser.add_subparsers(dest="mode")
 
     launch_parser = subparsers.add_parser('launch', help="Launch jobs.")
