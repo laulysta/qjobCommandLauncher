@@ -39,6 +39,13 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 nvidia-smi
 """
 
+# Checking which cluster is running the tests first
+process = Popen("sacctmgr list cluster", stdout=PIPE, stderr=PIPE, shell=True)
+stdout, _ = process.communicate()
+stdout = stdout.decode()
+cluster = stdout.splitlines()[2].strip().split(' ')[0]
+to_skip = cluster in ['graham', 'cedar']
+message = "Test does not run on cluster {}".format(cluster)
 
 class TestSlurm(unittest.TestCase):
 
@@ -66,6 +73,7 @@ class TestSlurm(unittest.TestCase):
             job_params = [c.strip() for c in stdout.decode().split("\n")[1:] if c != '']
             self.assertSequenceEqual(job_params, [output for _ in range(len(job_params))])
 
+    @unittest.skipIf(to_skip, message)
     def test_priority(self):
         self._test_param(
             ['high', 'low'],
@@ -94,12 +102,12 @@ class TestSlurm(unittest.TestCase):
     def test_nb_cpus(self):
         self._test_param(
             ["2", "3"],
-            "#PBS -l mppdepth={}",
-            # "#SBATCH --cpus-per-task={}",
-            "numcpus",
+            "#PBS -l ncpus={}",
+            "mincpus",
             pbs_string
         )
 
+    @unittest.skipIf(to_skip, message)
     def test_constraint(self):
         self._test_param(
             ["gpu6gb", "gpu8gb"],

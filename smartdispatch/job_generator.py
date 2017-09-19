@@ -73,6 +73,16 @@ class JobGenerator(object):
             pbs.add_resources(**resources)
             pbs.add_options(**options)
 
+    def add_sbatch_flags(self, flags):
+        options = {}
+
+        for flag in flags:
+            split = flag.find('=')
+            options[flag[:split]] = flag[split+1:]
+
+        for pbs in self.pbs_list:
+            pbs.add_sbatch_options(**options)
+
     def _generate_base_pbs(self):
         """ Generates PBS files allowing the execution of every commands on the given queue. """
         nb_commands_per_node = self.queue.nb_cores_per_node // self.nb_cores_per_command
@@ -171,3 +181,13 @@ class HeliosJobGenerator(JobGenerator):
         for pbs in self.pbs_list:
             # Remove forbidden ppn option. Default is 2 cores per gpu.
             pbs.resources['nodes'] = re.sub(":ppn=[0-9]+", "", pbs.resources['nodes'])
+
+class SlurmClusterGenerator(JobGenerator):
+
+    def _add_cluster_specific_rules(self):
+        for pbs in self.pbs_list:
+            node_resource = pbs.resources.pop('nodes')
+            gpus = re.match(".*gpus=([0-9]+)", node_resource).group(1)
+            ppn = re.match(".*ppn=([0-9]+)", node_resource).group(1)
+            pbs.add_resources(naccelerators=gpus)
+            pbs.add_resources(ncpus=ppn)

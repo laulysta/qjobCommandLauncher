@@ -17,7 +17,7 @@ def jobname_generator(jobname, job_id):
     Returns
     -------
     str
-    The cropped version of the string.  
+    The cropped version of the string.
     '''
     # 64 - 1 since the total length including -1 should be less than 64
     job_id = str(job_id)
@@ -115,6 +115,7 @@ def detect_cluster():
         output = Popen(["qstat", "-B"], stdout=PIPE).communicate()[0]
     except OSError:
         # If qstat is not available we assume that the cluster is unknown.
+        # TODO: handle MILA + CEDAR + GRAHAM
         return None
     # Get server name from status
     server_name = output.split('\n')[2].split(' ')[0]
