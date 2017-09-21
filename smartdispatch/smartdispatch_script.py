@@ -199,9 +199,6 @@ def main(argv=None):
 
 def parse_arguments(argv=None):
 
-    if argv is None:
-        argv = sys.argv[1:]
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', '--queueName', required=True, help='Queue used (ex: qwork@mp2, qfat256@mp2, gpu_1)')
     parser.add_argument('-n', '--batchName', required=False, help='The name of the batch. Default: The commands launched.')
