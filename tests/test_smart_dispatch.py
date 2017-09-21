@@ -8,7 +8,8 @@ from subprocess import call
 import subprocess
 from nose.tools import assert_true, assert_equal
 from smartdispatch import smartdispatch_script
-import traceback
+import six
+import sys
 
 class TestSmartdispatcher(unittest.TestCase):
 
@@ -116,19 +117,7 @@ class TestSmartdispatcher(unittest.TestCase):
     def test_launch_job_check(self, mock_check_output):
 
         #For this test, we won't call the script directly, since we want to mock subprocess.check_output
-        mock_check_output.side_effect = subprocess.CalledProcessError(1, 1, "A wild error appeared!")
         argv = ['-t', '0:0:1', '-G', '1', '-C', '1', '-q', 'random', 'launch', 'echo', 'testing123']
-
-
-        #Test if the test fail.
-        try:
-            with self.assertRaises(SystemExit) as context:
-                smartdispatch_script.main(argv=argv)
-
-                self.assertTrue(context.exception.code, 2)
-
-        except subprocess.CalledProcessError:
-            self.fail("smartdispatch_script.main() raised CalledProcessError unexpectedly:\n {}".format(traceback.format_exc()))
 
         # Test if the test pass (i.e the script run normaly)
         mock_check_output.side_effect = None
@@ -139,6 +128,22 @@ class TestSmartdispatcher(unittest.TestCase):
         except SystemExit as e:
             self.fail("The launcher had no problem, but the script failed nonetheless.")
 
+        # Test if the check fail
+        mock_check_output.side_effect = subprocess.CalledProcessError(1, 1, "A wild error appeared!")
+        
+        try:
+            with self.assertRaises(SystemExit) as context:
+                smartdispatch_script.main(argv=argv)
+
+                self.assertTrue(context.exception.code, 2)
+        
+        except subprocess.CalledProcessError:
+            # Rerasing the exception
+            orig_exc_type, orig_exc_value, orig_exc_traceback = sys.exc_info()
+
+            new_exc = Exception("smartdispatch_script.main() raised subprocess.CalledProcessError unexpectedly")
+            new_exc.reraised = True
+            six.reraise(type(new_exc), new_exc, orig_exc_traceback)
 
     def test_main_resume(self):
         # Setup

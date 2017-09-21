@@ -4,7 +4,8 @@ import subprocess
 from mock import patch
 import tempfile as tmp
 import shutil
-import traceback
+import six
+import sys
 
 class TestSmartScript(unittest.TestCase):
 
@@ -57,18 +58,7 @@ class TestSmartScript(unittest.TestCase):
     @patch('subprocess.check_output')
     def test_launch_job_check(self, mock_check_output):
 
-        mock_check_output.side_effect = subprocess.CalledProcessError(1, 1, "A wild error appeared!")
         argv = ['-t', '0:0:1', '-G', '1', '-C', '1', '-q', 'random', 'launch', 'echo', 'testing123']
-
-        # Test if the test fail.
-        try:
-            with self.assertRaises(SystemExit) as context:
-                smartdispatch_script.main(argv=argv)
-
-                self.assertTrue(context.exception.code, 2)
-        
-        except subprocess.CalledProcessError:
-            self.fail("smartdispatch_script.main() raised CalledProcessError unexpectedly:\n {}".format(traceback.format_exc()))
 
         # Test if the test pass (i.e the script run normaly)
         mock_check_output.side_effect = None
@@ -77,4 +67,21 @@ class TestSmartScript(unittest.TestCase):
         try:
             smartdispatch_script.main(argv=argv)
         except SystemExit as e:
-            self.fail("The launcher had no problem, but the script failed nonetheless.")
+          self.fail("The launcher had no problem, but the script failed nonetheless.")
+
+        mock_check_output.side_effect = subprocess.CalledProcessError(1, "echo blabla", "A wild error appeared!")
+
+        # Test if the test fail.
+        try:
+            with self.assertRaises(SystemExit) as context:
+                smartdispatch_script.main(argv=argv)
+
+                self.assertTrue(context.exception.code, 2)
+        
+        except subprocess.CalledProcessError as e:
+            # Rerasing the exception
+            orig_exc_type, orig_exc_value, orig_exc_traceback = sys.exc_info()
+            
+            new_exc = Exception("smartdispatch_script.main() raised subprocess.CalledProcessError unexpectedly")
+            new_exc.reraised = True
+            six.reraise(type(new_exc), new_exc, orig_exc_traceback)
