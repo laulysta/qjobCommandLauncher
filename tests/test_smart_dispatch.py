@@ -8,6 +8,7 @@ from subprocess import call
 import subprocess
 from nose.tools import assert_true, assert_equal
 from smartdispatch import smartdispatch_script
+import traceback
 
 class TestSmartdispatcher(unittest.TestCase):
 
@@ -103,9 +104,11 @@ class TestSmartdispatcher(unittest.TestCase):
 
     def test_main_launch_with_gpus_command(self):
         # Actual test
+        exit_status_0 = call(self.launch_command_with_gpus.format(gpus=0), shell=True)
         exit_status_100 = call(self.launch_command_with_gpus.format(gpus=100), shell=True)
 
         # Test validation
+        assert_equal(exit_status_0, 0)
         assert_equal(exit_status_100, 2)
         assert_true(os.path.isdir(self.logs_dir))
 
@@ -116,6 +119,8 @@ class TestSmartdispatcher(unittest.TestCase):
         mock_check_output.side_effect = subprocess.CalledProcessError(1, 1, "A wild error appeared!")
         argv = ['-t', '0:0:1', '-G', '1', '-C', '1', '-q', 'random', 'launch', 'echo', 'testing123']
 
+
+        #Test if the test fail.
         try:
             with self.assertRaises(SystemExit) as context:
                 smartdispatch_script.main(argv=argv)
@@ -123,7 +128,16 @@ class TestSmartdispatcher(unittest.TestCase):
                 self.assertTrue(context.exception.code, 2)
 
         except subprocess.CalledProcessError:
-            self.fail("smartdispatch_script.main() raised CalledProcessError unexpectedly!")
+            self.fail("smartdispatch_script.main() raised CalledProcessError unexpectedly:\n {}".format(traceback.format_exc()))
+
+        # Test if the test pass (i.e the script run normaly)
+        mock_check_output.side_effect = None
+        mock_check_output.return_value = ""
+
+        try:
+            smartdispatch_script.main(argv=argv)
+        except SystemExit as e:
+            self.fail("The launcher had no problem, but the script failed nonetheless.")
 
 
     def test_main_resume(self):
