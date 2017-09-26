@@ -2,8 +2,9 @@ from glob import glob
 import os
 import time
 import unittest
-
 from subprocess import Popen, PIPE
+
+from smartdispatch.utils import get_slurm_cluster_name
 
 pbs_string = """\
 #!/usr/bin/env /bin/bash
@@ -22,28 +23,8 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 nvidia-smi
 """
 
-sbatch_string = """\
-#!/usr/bin/env -i /bin/zsh
-
-#SBATCH --job-name=arrayJob
-#SBATCH --output=arrayJob_%A_%a.out
-#SBATCH --time=01:00:00
-{}
-
-######################
-# Begin work section #
-######################
-
-echo "My SLURM_ARRAY_JOB_ID:" $SLURM_ARRAY_JOB_ID
-echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
-nvidia-smi
-"""
-
 # Checking which cluster is running the tests first
-process = Popen("sacctmgr list cluster", stdout=PIPE, stderr=PIPE, shell=True)
-stdout, _ = process.communicate()
-stdout = stdout.decode()
-cluster = stdout.splitlines()[2].strip().split(' ')[0]
+cluster = get_slurm_cluster_name()
 to_skip = cluster in ['graham', 'cedar']
 message = "Test does not run on cluster {}".format(cluster)
 
@@ -53,14 +34,14 @@ class TestSlurm(unittest.TestCase):
         for file_name in (glob('*.out') + ["test.pbs"]):
             os.remove(file_name)
 
-    def _test_param(self, param_array, command, flag, string=pbs_string, output_array=None):
+    def _test_param(self, param_array, command_template, flag, string=pbs_string, output_array=None):
         output_array = output_array or param_array
         for param, output in zip(param_array, output_array):
-            com = pbs_string.format(
-                string.format(command.format(param))
+            param_command = pbs_string.format(
+                string.format(command_template.format(param))
             )
             with open("test.pbs", "w") as text_file:
-                text_file.write(com)
+                text_file.write(param_command)
             process = Popen("sbatch test.pbs", stdout=PIPE, stderr=PIPE, shell=True)
             stdout, _ = process.communicate()
             stdout = stdout.decode()

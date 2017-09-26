@@ -70,10 +70,14 @@ class PBS(object):
         Parameters
         ----------
         **options : dict
-            each key is the name of a SBATCH option (see `Options`)
+            each key is the name of a SBATCH option
         """
 
         for option_name, option_value in options.items():
+            if len(option_name) == 1:
+                self.sbatch_options["-" + option_name] = option_value
+            else:
+                self.sbatch_options["--" + option_name] = option_value
             self.sbatch_options[option_name] = option_value
 
     def add_resources(self, **resources):

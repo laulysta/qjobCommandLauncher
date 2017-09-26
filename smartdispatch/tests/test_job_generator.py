@@ -1,4 +1,5 @@
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
+import unittest
 
 import os
 import tempfile
@@ -7,6 +8,7 @@ from smartdispatch.queue import Queue
 from smartdispatch.job_generator import JobGenerator, job_generator_factory
 from smartdispatch.job_generator import HeliosJobGenerator, HadesJobGenerator
 from smartdispatch.job_generator import GuilliminJobGenerator, MammouthJobGenerator
+from smartdispatch.job_generator import SlurmJobGenerator
 
 
 class TestJobGenerator(object):
@@ -241,7 +243,6 @@ class TestHadesQueue(object):
     def test_pbs_split_2_job_nb_commands(self):
         assert_true("ppn=6" in str(self.pbs8[0]))
         assert_true("ppn=2" in str(self.pbs8[1]))
-
 
 class TestJobGeneratorFactory(object):
 

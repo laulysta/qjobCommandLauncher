@@ -115,7 +115,7 @@ def detect_cluster():
         output = Popen(["qstat", "-B"], stdout=PIPE).communicate()[0]
     except OSError:
         # If qstat is not available we assume that the cluster is unknown.
-        # TODO: handle MILA + CEDAR + GRAHAM
+        cluster_name = get_slurm_cluster_name()
         return None
     # Get server name from status
     server_name = output.split('\n')[2].split(' ')[0]
@@ -131,6 +131,11 @@ def detect_cluster():
         cluster_name = "hades"
     return cluster_name
 
+def get_slurm_cluster_name():
+    stdout = Popen("sacctmgr list cluster", stdout=PIPE, shell=True).communicate()[0]
+    stdout = stdout.decode()
+    cluster_name = stdout.splitlines()[2].strip().split(' ')[0]
+    return cluster_name
 
 def get_launcher(cluster_name):
     if cluster_name == "helios":

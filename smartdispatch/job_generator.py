@@ -78,7 +78,12 @@ class JobGenerator(object):
 
         for flag in flags:
             split = flag.find('=')
-            options[flag[:split]] = flag[split+1:]
+            if flag.startswith('--'):
+                options[flag[2:split]] = flag[split+1:]
+            elif flag.startswith('-'):
+                options[flag[1:split]] = flag[split+1:]
+            else:
+                raise ValueError("Invalid SBATCH flag ({})".format(flag))
 
         for pbs in self.pbs_list:
             pbs.add_sbatch_options(**options)
@@ -182,12 +187,13 @@ class HeliosJobGenerator(JobGenerator):
             # Remove forbidden ppn option. Default is 2 cores per gpu.
             pbs.resources['nodes'] = re.sub(":ppn=[0-9]+", "", pbs.resources['nodes'])
 
-class SlurmClusterGenerator(JobGenerator):
+class SlurmJobGenerator(JobGenerator):
 
     def _add_cluster_specific_rules(self):
         for pbs in self.pbs_list:
-            node_resource = pbs.resources.pop('nodes')
-            gpus = re.match(".*gpus=([0-9]+)", node_resource).group(1)
-            ppn = re.match(".*ppn=([0-9]+)", node_resource).group(1)
+            gpus = re.match(".*gpus=([0-9]+)", pbs.resources['nodes']).group(1)
+            ppn = re.match(".*ppn=([0-9]+)", pbs.resources['nodes']).group(1)
+            pbs.resources['nodes'] = re.sub("ppn=[0-9]+", "", pbs.resources['nodes'])
+            pbs.resources['nodes'] = re.sub(":gpus=[0-9]+", "", pbs.resources['nodes'])
             pbs.add_resources(naccelerators=gpus)
             pbs.add_resources(ncpus=ppn)
