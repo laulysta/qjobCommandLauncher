@@ -1,7 +1,6 @@
 from nose.tools import assert_true, assert_equal, assert_raises
 from numpy.testing import assert_array_equal
 
-
 from smartdispatch.pbs import PBS
 import unittest
 import tempfile
@@ -37,6 +36,13 @@ class TestPBS(unittest.TestCase):
         self.pbs.add_options(A="option2", B="option3")
         assert_equal(self.pbs.options["-A"], "option2")
         assert_equal(self.pbs.options["-B"], "option3")
+
+    def test_add_sbatch_options(self):
+        self.pbs.add_sbatch_options(a="value1")
+        assert_equal(self.pbs.sbatch_options["-a"], "value1")
+        self.pbs.add_sbatch_options(option1="value2", option2="value3")
+        assert_equal(self.pbs.sbatch_options["--option1"], "value2")
+        assert_equal(self.pbs.sbatch_options["--option2"], "value3")
 
     def test_add_resources(self):
         assert_equal(len(self.pbs.resources), 1)
