@@ -79,11 +79,13 @@ class JobGenerator(object):
         for flag in flags:
             split = flag.find('=')
             if flag.startswith('--'):
-                options[flag[2:split]] = flag[split+1:]
-            elif flag.startswith('-'):
-                options[flag[1:split]] = flag[split+1:]
+                if split == -1:
+                    raise ValueError("Invalid SBATCH flag ({})".format(flag))
+                options[flag[:split].lstrip("-")] = flag[split+1:]
+            elif flag.startswith('-') and split == -1:
+                options[flag[1:2]] = flag[2:]
             else:
-                raise ValueError("Invalid SBATCH flag ({})".format(flag))
+                raise ValueError("Invalid SBATCH flag ({}, is it a PBS flag?)".format(flag))
 
         for pbs in self.pbs_list:
             pbs.add_sbatch_options(**options)
