@@ -178,7 +178,10 @@ class PBS(object):
             pbs += ["#PBS -l {0}={1}".format(resource_name, resource_value)]
 
         for option_name, option_value in self.sbatch_options.items():
-            pbs += ["#SBATCH {0}={1}".format(option_name, option_value)]
+            if option_name.startswith('--'):
+                pbs += ["#SBATCH {0}={1}".format(option_name, option_value)]
+            else:
+                pbs += ["#SBATCH {0} {1}".format(option_name, option_value)]
 
         pbs += ["\n# Modules #"]
         for module in self.modules:

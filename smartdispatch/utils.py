@@ -115,6 +115,7 @@ def detect_cluster():
         output = Popen(["qstat", "-B"], stdout=PIPE).communicate()[0]
     except OSError:
         # If qstat is not available we assume that the cluster is unknown.
+        # TODO: handle MILA + CEDAR + GRAHAM
         cluster_name = get_slurm_cluster_name()
         return None
     # Get server name from status
