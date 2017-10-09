@@ -10,6 +10,28 @@ from nose.tools import assert_true, assert_equal
 from smartdispatch import smartdispatch_script
 import six
 import sys
+import traceback
+
+def rethrow_exception(exception, new_message):
+
+    def func_wraper(func):
+        
+        def test_func(*args, **kwargs):
+	    try:
+                return func(*args, **kwargs)
+            except exception as e:
+    
+                orig_exc_type, orig_exc_value, orig_exc_traceback = sys.exc_info()
+                new_exc = Exception(new_message)
+                new_exc.reraised = True
+                new_exc.__cause__ = orig_exc_value
+
+                new_traceback = orig_exc_traceback
+                six.reraise(type(new_exc), new_exc, new_traceback)
+
+
+        return test_func
+    return func_wraper
 
 class TestSmartdispatcher(unittest.TestCase):
 
@@ -113,7 +135,7 @@ class TestSmartdispatcher(unittest.TestCase):
         assert_equal(exit_status_100, 2)
         assert_true(os.path.isdir(self.logs_dir))
 
-
+    @rethrow_exception(SystemExit, "smartdispatch_script.main() raised SystemExit unexpectedly.")
     def test_gpu_check(self):
 
         argv = ['-x', '-g', '2', '-G', '1', '-C', '1', '-q', 'random', '-t', '00:00:10' ,'launch', 'echo', 'testing123']
@@ -125,14 +147,10 @@ class TestSmartdispatcher(unittest.TestCase):
         self.assertTrue(context.exception.code, 2)
 
         # Test if the test pass
-        argv[2] = '0'
+        argv[2] = '1'
+        smartdispatch_script.main(argv=argv)
 
-        try:
-            smartdispatch_script.main(argv=argv)
-        except SystemExit as e:
-            self.fail("The command failed the check, but it was supposed to pass.")
-
-
+    @rethrow_exception(SystemExit, "smartdispatch_script.main() raised SystemExit unexpectedly.")
     def test_cpu_check(self):
 
         argv = ['-x', '-c', '2', '-C', '1', '-G', '1', '-t', '00:00:10', '-q', 'random', 'launch', 'echo', 'testing123']
@@ -145,13 +163,9 @@ class TestSmartdispatcher(unittest.TestCase):
 
         # Test if the test pass
         argv[2] = '1'
+        smartdispatch_script.main(argv=argv)
 
-        try:
-            smartdispatch_script.main(argv=argv)
-        except SystemExit as e:
-            self.fail("The command failed the check, but it was supposed to pass.")
-
-
+    @rethrow_exception(subprocess.CalledProcessError, "smartdispatch_script.main() raised subprocess.CalledProcessError unexpectedly")
     @patch('subprocess.check_output')
     def test_launch_job_check(self, mock_check_output):
 
@@ -170,19 +184,9 @@ class TestSmartdispatcher(unittest.TestCase):
         # Test if the check fail
         mock_check_output.side_effect = subprocess.CalledProcessError(1, 1, "A wild error appeared!")
         
-        try:
-            with self.assertRaises(SystemExit) as context:
-                smartdispatch_script.main(argv=argv)
-
-                self.assertTrue(context.exception.code, 2)
-        
-        except subprocess.CalledProcessError:
-            # Rerasing the exception
-            orig_exc_type, orig_exc_value, orig_exc_traceback = sys.exc_info()
-
-            new_exc = Exception("smartdispatch_script.main() raised subprocess.CalledProcessError unexpectedly")
-            new_exc.reraised = True
-            six.reraise(type(new_exc), new_exc, orig_exc_traceback)
+        with self.assertRaises(SystemExit) as context:
+            smartdispatch_script.main(argv=argv)
+            self.assertTrue(context.exception.code, 2)
 
     def test_main_resume(self):
         # Setup
