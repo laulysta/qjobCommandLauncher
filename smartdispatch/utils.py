@@ -136,3 +136,26 @@ def get_launcher(cluster_name):
         return "msub"
     else:
         return "qsub"
+
+def get_advice(cluster_name):
+
+    helios_advice = """On Helios, don't forget that the queue gpu_1, gpu_2, gpu_4 and gpu_8 give access to a specific amount of gpus.
+For more advices, please refer to the official documentation: 'https://wiki.calculquebec.ca/w/Helios/en'"""    
+    mammouth_advice = "On Mammouth, please refer to the official documentation for more information: 'https://wiki.ccs.usherbrooke.ca/Accueil/en'"
+    hades_advice = """On Hades, don't forget that the queue name '@hades' needs to be use.
+For more advices, please refer to the official documentation: 'https://wiki.calculquebec.ca/w/Ex%C3%A9cuter_une_t%C3%A2che/en#tab=tab5'"""
+    guillimin_advice = """On Guillimin, please refer to the official documentation for more information: 'http://www.hpc.mcgill.ca/index.php/starthere'"""
+
+    if cluster_name == "helios":
+        return helios_advice
+    elif cluster_name == 'mammouth':
+        return mammouth_advice
+    elif cluster_name == 'hades':
+        return hades_advice
+    elif cluster_name == "guillimin":
+        return guillimin_advice
+
+    return ''
+
+
+
