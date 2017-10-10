@@ -9,29 +9,7 @@ import subprocess
 from nose.tools import assert_true, assert_equal
 from smartdispatch import smartdispatch_script
 import six
-import sys
-import traceback
-
-def rethrow_exception(exception, new_message):
-
-    def func_wraper(func):
-        
-        def test_func(*args, **kwargs):
-	    try:
-                return func(*args, **kwargs)
-            except exception as e:
-    
-                orig_exc_type, orig_exc_value, orig_exc_traceback = sys.exc_info()
-                new_exc = Exception(new_message)
-                new_exc.reraised = True
-                new_exc.__cause__ = orig_exc_value
-
-                new_traceback = orig_exc_traceback
-                six.reraise(type(new_exc), new_exc, new_traceback)
-
-
-        return test_func
-    return func_wraper
+from smartdispatch import utils
 
 class TestSmartdispatcher(unittest.TestCase):
 
@@ -135,7 +113,7 @@ class TestSmartdispatcher(unittest.TestCase):
         assert_equal(exit_status_100, 2)
         assert_true(os.path.isdir(self.logs_dir))
 
-    @rethrow_exception(SystemExit, "smartdispatch_script.main() raised SystemExit unexpectedly.")
+    @utils.rethrow_exception(SystemExit, "smartdispatch_script.main() raised SystemExit unexpectedly.")
     def test_gpu_check(self):
 
         argv = ['-x', '-g', '2', '-G', '1', '-C', '1', '-q', 'random', '-t', '00:00:10' ,'launch', 'echo', 'testing123']
@@ -150,7 +128,22 @@ class TestSmartdispatcher(unittest.TestCase):
         argv[2] = '1'
         smartdispatch_script.main(argv=argv)
 
-    @rethrow_exception(SystemExit, "smartdispatch_script.main() raised SystemExit unexpectedly.")
+        # Test if we don't have gpus. (and spicified in script).
+        argv[2] = '0'
+        argv[4] = '0'
+        smartdispatch_script.main(argv=argv)
+
+        # Don't have gpus, but the user specofy 1 anyway.
+        argv[2] = '1'
+        with self.assertRaises(SystemExit) as context:
+            smartdispatch_script.main(argv=argv)
+        self.assertTrue(context.exception.code, 2)
+
+        # Test if the user didn't specified anything.
+        argv = ['-x', '-C', '1', '-q', 'random', '-t', '00:00:10' ,'launch', 'echo', 'testing123']
+        smartdispatch_script.main(argv=argv)
+
+    @utils.rethrow_exception(SystemExit, "smartdispatch_script.main() raised SystemExit unexpectedly.")
     def test_cpu_check(self):
 
         argv = ['-x', '-c', '2', '-C', '1', '-G', '1', '-t', '00:00:10', '-q', 'random', 'launch', 'echo', 'testing123']
@@ -165,7 +158,7 @@ class TestSmartdispatcher(unittest.TestCase):
         argv[2] = '1'
         smartdispatch_script.main(argv=argv)
 
-    @rethrow_exception(subprocess.CalledProcessError, "smartdispatch_script.main() raised subprocess.CalledProcessError unexpectedly")
+    @utils.rethrow_exception(subprocess.CalledProcessError, "smartdispatch_script.main() raised subprocess.CalledProcessError unexpectedly")
     @patch('subprocess.check_output')
     def test_launch_job_check(self, mock_check_output):
 

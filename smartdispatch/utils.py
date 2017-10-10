@@ -2,9 +2,44 @@ import re
 import hashlib
 import unicodedata
 import json
+import sys
+import six
 
 from distutils.util import strtobool
 from subprocess import Popen, PIPE
+
+HELIOS_ADVICE = ("On Helios, don't forget that the queue gpu_1, gpu_2, gpu_4"
+                 " and gpu_8 give access to a specific amount of gpus."
+                 "\nFor more advices, please refer to the official"
+                 " documentation 'https://wiki.calculquebec.ca/w/Helios/en'")
+
+MAMMOUTH_ADVICE = ("On Mammouth, please refer to the official documentation"
+                   " for more information:"
+                   " 'https://wiki.ccs.usherbrooke.ca/Accueil/en'")
+
+HADES_ADVICE = ("On Hades, don't forget that the queue name '@hades' needs"
+                " to be used.\nFor more advices, please refer to the"
+                " official documentation: 'https://wiki.calculquebec.ca/w"
+                "/Ex%C3%A9cuter_une_t%C3%A2che/en#tab=tab5'")
+
+GUILLIMIN_ADVICE = ("On Guillimin, please refer to the official documentation"
+                    " for more information: 'http://www.hpc.mcgill.ca/"
+                    "index.php/starthere'")
+
+
+def get_advice(cluster_name):
+
+    if cluster_name == "helios":
+        return HELIOS_ADVICE
+    elif cluster_name == 'mammouth':
+        return MAMMOUTH_ADVICE
+    elif cluster_name == 'hades':
+        return HADES_ADVICE
+    elif cluster_name == "guillimin":
+        return GUILLIMIN_ADVICE
+
+    return ''
+
 
 def jobname_generator(jobname, job_id):
     '''Crop the jobname to a maximum of 64 characters.
@@ -137,25 +172,24 @@ def get_launcher(cluster_name):
     else:
         return "qsub"
 
-def get_advice(cluster_name):
 
-    helios_advice = """On Helios, don't forget that the queue gpu_1, gpu_2, gpu_4 and gpu_8 give access to a specific amount of gpus.
-For more advices, please refer to the official documentation: 'https://wiki.calculquebec.ca/w/Helios/en'"""    
-    mammouth_advice = "On Mammouth, please refer to the official documentation for more information: 'https://wiki.ccs.usherbrooke.ca/Accueil/en'"
-    hades_advice = """On Hades, don't forget that the queue name '@hades' needs to be use.
-For more advices, please refer to the official documentation: 'https://wiki.calculquebec.ca/w/Ex%C3%A9cuter_une_t%C3%A2che/en#tab=tab5'"""
-    guillimin_advice = """On Guillimin, please refer to the official documentation for more information: 'http://www.hpc.mcgill.ca/index.php/starthere'"""
+def rethrow_exception(exception, new_message):
 
-    if cluster_name == "helios":
-        return helios_advice
-    elif cluster_name == 'mammouth':
-        return mammouth_advice
-    elif cluster_name == 'hades':
-        return hades_advice
-    elif cluster_name == "guillimin":
-        return guillimin_advice
+    def func_wraper(func):
 
-    return ''
+        def test_func(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except exception as e:
+
+                orig_exc_type, orig_exc_value, orig_exc_traceback = sys.exc_info()
+                new_exc = Exception(new_message)
+                new_exc.reraised = True
+                new_exc.__cause__ = orig_exc_value
+
+                new_traceback = orig_exc_traceback
+                six.reraise(type(new_exc), new_exc, new_traceback)
 
 
-
+        return test_func
+    return func_wraper

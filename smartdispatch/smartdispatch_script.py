@@ -148,6 +148,13 @@ def main(argv=None):
     # TODO: use args.memPerNode instead of args.memPerNode
     queue = Queue(args.queueName, CLUSTER_NAME, args.walltime, args.coresPerNode, args.gpusPerNode, float('inf'), args.modules)
 
+    # Change the default value of the gpusPerCommand depending on the value of 
+    if args.gpusPerCommand is None:
+        if queue.nb_gpus_per_node == 0:
+            args.gpusPerCommand = 0
+        else:
+            args.gpusPerCommand = 1
+
     # Check that requested core number does not exceed node total
     if args.coresPerCommand > queue.nb_cores_per_node:
         sys.stderr.write("smart-dispatch: error: coresPerCommand exceeds nodes total: asked {req_cores} cores, nodes have {node_cores}\n"
@@ -156,8 +163,11 @@ def main(argv=None):
 
     # Check that requested gpu number does not exceed node total
     if args.gpusPerCommand > queue.nb_gpus_per_node:
-        sys.stderr.write("smart-dispatch: error: gpusPerCommand exceeds nodes total: asked {req_gpus} gpus, nodes have {node_gpus}\n"
-                         .format(req_gpus=args.gpusPerCommand, node_gpus=queue.nb_gpus_per_node))
+
+        error_message = ("smart-dispatch: error: gpusPerCommand exceeds nodes total:" 
+                         "asked {req_gpus} gpus, nodes have {node_gpus}. Make sure you have specified the correct queue.\n")
+
+        sys.stderr.write(error_message.format(req_gpus=args.gpusPerCommand, node_gpus=queue.nb_gpus_per_node))
         sys.exit(2)
 
 
@@ -194,7 +204,14 @@ def main(argv=None):
 
             cluster_advice = utils.get_advice(CLUSTER_NAME)
 
-            sys.stderr.write("smart-dispatch: error: The launcher wasn't able the launch the job(s) properly. The following error message was returned: \n\n{}\n\nMaybe the pbs file(s) generated were invalid. {}\n\n".format(e.output, cluster_advice))
+            error_message = ("smart-dispatch: error: The launcher wasn't"
+                             " able the launch the job(s) properly. The"
+                             " following error message was returned: \n\n{}"
+                             "\n\nMaybe the pbs file(s) generated were"
+                             " invalid. {}\n\n")
+
+
+            sys.stderr.write(error_message.format(e.output, cluster_advice))
             sys.exit(2)
 
     print "\nLogs, command, and jobs id related to this batch will be in:\n {smartdispatch_folder}".format(smartdispatch_folder=path_job)
@@ -212,7 +229,7 @@ def parse_arguments(argv=None):
     # parser.add_argument('-M', '--memPerNode', type=int, required=False, help='How much memory there are per node (in Gb).')
 
     parser.add_argument('-c', '--coresPerCommand', type=int, required=False, help='How many cores a command needs.', default=1)
-    parser.add_argument('-g', '--gpusPerCommand', type=int, required=False, help='How many gpus a command needs.', default=1)
+    parser.add_argument('-g', '--gpusPerCommand', type=int, required=False, help='How many gpus a command needs. The value is 1 by default if GPUs are available on the specified queue, 0 otherwise.')
     # parser.add_argument('-m', '--memPerCommand', type=float, required=False, help='How much memory a command needs (in Gb).')
     parser.add_argument('-f', '--commandsFile', type=file, required=False, help='File containing commands to launch. Each command must be on a seperate line. (Replaces commandAndOptions)')
 
@@ -241,7 +258,7 @@ def parse_arguments(argv=None):
             parser.error("Unknown queue, --coresPerNode/--gpusPerNode and --walltime must be set.")
         if args.coresPerCommand < 1:
             parser.error("coresPerNode must be at least 1")
-
+    
     return args
 
 
