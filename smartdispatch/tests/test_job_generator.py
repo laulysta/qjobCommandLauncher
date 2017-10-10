@@ -1,9 +1,14 @@
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
+import os
+import shutil
+import tempfile
 import unittest
 
-import os
-import tempfile
-import shutil
+try:
+    from mock import patch
+except ImportError:
+    from unittest.mock import patch
+
 from smartdispatch.queue import Queue
 from smartdispatch.job_generator import JobGenerator, job_generator_factory
 from smartdispatch.job_generator import HeliosJobGenerator, HadesJobGenerator
@@ -155,7 +160,7 @@ class TestJobGenerator(object):
     def test_add_sbatch_flag_invalid(self):
         invalid_flags = ["--qos high", "gpu", "-lfeature=k80"]
         for flag in invalid_flags:
-            assert_raises(ValueError, self._test_add_sbatch_flags, "--qos high")
+            assert_raises(ValueError, self._test_add_sbatch_flags, flag)
 
 class TestGuilliminQueue(object):
 
@@ -285,9 +290,15 @@ class TestSlurmQueue(object):
         job_generator = SlurmJobGenerator(self.queue, self.commands)
         self.pbs = job_generator.pbs_list
 
+        with patch.object(SlurmJobGenerator,'_add_cluster_specific_rules', side_effect=lambda: None):
+            dummy_generator = SlurmJobGenerator(self.queue, self.commands)
+            self.dummy_pbs = dummy_generator.pbs_list
+
     def test_ppn_ncpus(self):
         assert_true("ppn" not in str(self.pbs[0]))
         assert_true("ncpus" in str(self.pbs[0]))
+        assert_true("ppn" in str(self.dummy_pbs[0]))
+        assert_true("ncpus" not in str(self.dummy_pbs[0]))
 
     def test_gpus_naccelerators(self):
         assert_true("gpus" not in str(self.pbs[0]))

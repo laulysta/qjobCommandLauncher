@@ -80,7 +80,7 @@ class JobGenerator(object):
             split = flag.find('=')
             if flag.startswith('--'):
                 if split == -1:
-                    raise ValueError("Invalid SBATCH flag ({})".format(flag))
+                    raise ValueError("Invalid SBATCH flag ({}), no '=' character found' ".format(flag))
                 options[flag[:split].lstrip("-")] = flag[split+1:]
             elif flag.startswith('-') and split == -1:
                 options[flag[1:2]] = flag[2:]
