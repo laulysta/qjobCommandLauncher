@@ -15,5 +15,8 @@ setup(
     description='An easy to use job launcher for supercomputers with PBS compatible job manager.',
     long_description=open('README.md').read(),
     install_requires=['psutil>=1'],
+    extras_require={
+        'doc': ['sphinxcontrib-autoprogram>=0.1.3']
+    },
     package_data={'smartdispatch': ['config/*.json']}
 )

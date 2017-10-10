@@ -85,6 +85,11 @@ def unfold_command(command):
     ------------------
     *list*: "[item1 item2 ... itemN]"
     *range*: "[start:end]" or "[start:end:step]"
+    *linear*: "[start,end,npoints]"
+    *logarithmic*: "[start,end,npoints]" or "[start,end,npoints,base]"
+    *uniform*: "[location,scale,nsamples]"
+    *normal*: "[low,high,nsamples]"
+
     '''
     text = utils.encode_escaped_characters(command)
 
@@ -198,4 +203,4 @@ def launch_jobs(launcher, pbs_filenames, cluster_name, path_job):  # pragma: no 
     with open_with_lock(pjoin(path_job, "jobs_id.txt"), 'a') as jobs_id_file:
         jobs_id_file.writelines(t.strftime("## %Y-%m-%d %H:%M:%S ##\n"))
         jobs_id_file.writelines("\n".join(jobs_id) + "\n")
-    print "\nJobs id:\n{jobs_id}".format(jobs_id=" ".join(jobs_id))
+    print("\nJobs id:\n{jobs_id}".format(jobs_id=" ".join(jobs_id)))
