@@ -85,6 +85,10 @@ def unfold_command(command):
     ------------------
     *list*: "[item1 item2 ... itemN]"
     *range*: "[start:end]" or "[start:end:step]"
+    *linear*: "[start,end,npoints]"
+    *logarithmic*: "[start,end,npoints]" or "[start,end,npoints,base]"
+    *uniform*: "[location,scale,nsamples]"
+    *normal*: "[low,high,nsamples]"
     '''
     text = utils.encode_escaped_characters(command)
 
