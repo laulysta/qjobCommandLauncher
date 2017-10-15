@@ -74,3 +74,11 @@ python my_script.py 9
 Jobs that did not terminate properly, for example, it exceeded the walltime, can be resumed using the {batch_id} given to you upon launch. Of course, all this assuming your script is resumable.
 
 *Note: Jobs are always in a batch, even if it's a batch of one.*
+
+### SLURM clusters
+
+Smartdispatch can also run on SLURM clusters
+All features like `--gpusPerNode` or `--coresPerNode` are supported
+However you need to pass SLURM specific features like `--qos` or `--output`as sbatch flach with:
+`smart-dispatch -q qtest@mp2 launch python my_script.py [1:4] --sbatchFlags="--qos=high -ofile.out`
+If you use the full name of a feature you have to separate the feature and its value by a = like `--qos=high` if not you have to append the features and its value ex: `-ofile.out` is valid, not `-o file.out`
