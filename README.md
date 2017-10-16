@@ -77,8 +77,9 @@ Jobs that did not terminate properly, for example, it exceeded the walltime, can
 
 ### SLURM clusters
 
-Smartdispatch can also run on SLURM clusters
-All features like `--gpusPerNode` or `--coresPerNode` are supported
-However you need to pass SLURM specific features like `--qos` or `--output`as sbatch flach with:
-`smart-dispatch -q qtest@mp2 launch python my_script.py [1:4] --sbatchFlags="--qos=high -ofile.out`
-If you use the full name of a feature you have to separate the feature and its value by a = like `--qos=high` if not you have to append the features and its value ex: `-ofile.out` is valid, not `-o file.out`
+Smartdispatch can also run on SLURM clusters.
+All features like `--gpusPerNode` or `--coresPerNode` are supported.
+However you need to pass SLURM specific features using --sbatchFlags. For simplicity, --sbatchFlags supports short and long option definitions only with the following syntax:
+-Cgpu6gb or --constraint=gpu6gb
+For comparison, this would be invalid:
+-C gpu6gb or --constraint gpu6gb.
