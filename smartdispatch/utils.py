@@ -193,4 +193,4 @@ def get_launcher(cluster_name):
         if command_is_available(launcher):
             return launcher
 
-    raise RuntimeError("No compatible launcher found on the system")
+    return None
