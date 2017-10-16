@@ -198,24 +198,16 @@ class TestGetLauncher(unittest.TestCase):
                 lambda command: launcher if launcher == command else None)
 
             for cluster_name in self.CLUSTER_NAMES:
-                if cluster_name in utils.MSUB_CLUSTERS:
-                    continue
-                with self.assertRaises(RuntimeError):
-                    utils.get_launcher(cluster_name)
+                self._assert_launcher(None, cluster_name)
 
             for idx in range(self.N_RANDOM):
-                with self.assertRaises(RuntimeError):
-                    utils.get_launcher(self._get_random_string())
+                self._assert_launcher(None, self._get_random_string())
 
             # Test if command_is_available only returns None
             mock_distutils.spawn.find_executable.return_value = None
 
             for cluster_name in self.CLUSTER_NAMES:
-                if cluster_name in utils.MSUB_CLUSTERS:
-                    continue
-                with self.assertRaises(RuntimeError):
-                    utils.get_launcher(cluster_name)
+                self._assert_launcher(None, cluster_name)
 
             for idx in range(self.N_RANDOM):
-                with self.assertRaises(RuntimeError):
-                    utils.get_launcher(self._get_random_string())
+                self._assert_launcher(None, self._get_random_string())
