@@ -125,16 +125,16 @@ class TestSmartdispatcher(unittest.TestCase):
         self.assertTrue(context.exception.code, 2)
 
         # Test if the test pass
-        argv[2] = '1'
+        argv[2] = '1' # -g 1
         smartdispatch_script.main(argv=argv)
 
         # Test if we don't have gpus. (and specified in script).
-        argv[2] = '0'
-        argv[4] = '0'
+        argv[2] = '0' # -g 0
+        argv[4] = '0' # -G 0
         smartdispatch_script.main(argv=argv)
 
-        # Don't have gpus, but the user specify 1 anyway.
-        argv[2] = '1'
+        # Don't have gpus, but the user specified 1 anyway.
+        argv[2] = '1' # -g 1
         with self.assertRaises(SystemExit) as context:
             smartdispatch_script.main(argv=argv)
         self.assertTrue(context.exception.code, 2)
@@ -155,7 +155,7 @@ class TestSmartdispatcher(unittest.TestCase):
         self.assertTrue(context.exception.code, 2)
 
         # Test if the test pass
-        argv[2] = '1'
+        argv[2] = '1'# -c 1
         smartdispatch_script.main(argv=argv)
 
     @utils.rethrow_exception(subprocess.CalledProcessError, "smartdispatch_script.main() raised subprocess.CalledProcessError unexpectedly")
