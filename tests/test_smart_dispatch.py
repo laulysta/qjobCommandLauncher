@@ -128,12 +128,12 @@ class TestSmartdispatcher(unittest.TestCase):
         argv[2] = '1'
         smartdispatch_script.main(argv=argv)
 
-        # Test if we don't have gpus. (and spicified in script).
+        # Test if we don't have gpus. (and specified in script).
         argv[2] = '0'
         argv[4] = '0'
         smartdispatch_script.main(argv=argv)
 
-        # Don't have gpus, but the user specofy 1 anyway.
+        # Don't have gpus, but the user specify 1 anyway.
         argv[2] = '1'
         with self.assertRaises(SystemExit) as context:
             smartdispatch_script.main(argv=argv)

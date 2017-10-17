@@ -4,6 +4,7 @@ import unicodedata
 import json
 import sys
 import six
+import functools
 
 from distutils.util import strtobool
 from subprocess import Popen, PIPE
@@ -177,6 +178,7 @@ def rethrow_exception(exception, new_message):
 
     def func_wraper(func):
 
+        @functools.wraps(func)
         def test_func(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
