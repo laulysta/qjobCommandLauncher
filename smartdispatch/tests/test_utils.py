@@ -25,7 +25,22 @@ class TestWalltimeToSeconds(unittest.TestCase):
             seconds=random.randint(0, 59))
 
     def _compute_seconds(self, days=0, hours=0, minutes=0, seconds=0):
-        return ((((days * 24) + hours) * 60) + minutes * 60) + seconds
+        return (((((days * 24) + hours) * 60) + minutes) * 60) + seconds
+
+    def test_compute_seconds(self):
+
+        date_format = dict(
+            days=2,
+            hours=3,
+            minutes=5,
+            seconds=7)
+
+        total_seconds = 183907
+
+        self.assertEqual(self._compute_seconds(**date_format), total_seconds)
+        self.assertEqual(utils.walltime_to_seconds(
+            "{days}:{hours}:{minutes}:{seconds}".format(**date_format)),
+            total_seconds)
 
     def test_ddhhmmss(self):
         seconds = utils.walltime_to_seconds(

@@ -30,7 +30,7 @@ def walltime_to_seconds(walltime):
 
     days, hours, minutes, seconds = map(int, split)
 
-    return ((((days * 24) + hours) * 60) + minutes * 60) + seconds
+    return (((((days * 24) + hours) * 60) + minutes) * 60) + seconds
 
 
 def jobname_generator(jobname, job_id):
