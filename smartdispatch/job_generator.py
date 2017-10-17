@@ -15,6 +15,8 @@ def job_generator_factory(queue, commands, prolog=[], epilog=[], command_params=
         return HeliosJobGenerator(queue, commands, prolog, epilog, command_params, base_path)
     elif cluster_name == "hades":
         return HadesJobGenerator(queue, commands, prolog, epilog, command_params, base_path)
+    elif utils.get_launcher(cluster_name) == "sbatch":
+        return SlurmJobGenerator(queue, commands, prolog, epilog, command_params, base_path)
 
     return JobGenerator(queue, commands, prolog, epilog, command_params, base_path)
 
@@ -72,6 +74,23 @@ class JobGenerator(object):
         for pbs in self.pbs_list:
             pbs.add_resources(**resources)
             pbs.add_options(**options)
+
+    def add_sbatch_flags(self, flags):
+        options = {}
+
+        for flag in flags:
+            split = flag.find('=')
+            if flag.startswith('--'):
+                if split == -1:
+                    raise ValueError("Invalid SBATCH flag ({}), no '=' character found' ".format(flag))
+                options[flag[:split].lstrip("-")] = flag[split+1:]
+            elif flag.startswith('-') and split == -1:
+                options[flag[1:2]] = flag[2:]
+            else:
+                raise ValueError("Invalid SBATCH flag ({}, is it a PBS flag?)".format(flag))
+
+        for pbs in self.pbs_list:
+            pbs.add_sbatch_options(**options)
 
     def _generate_base_pbs(self):
         """ Generates PBS files allowing the execution of every commands on the given queue. """
@@ -171,3 +190,72 @@ class HeliosJobGenerator(JobGenerator):
         for pbs in self.pbs_list:
             # Remove forbidden ppn option. Default is 2 cores per gpu.
             pbs.resources['nodes'] = re.sub(":ppn=[0-9]+", "", pbs.resources['nodes'])
+
+
+class SlurmJobGenerator(JobGenerator):
+
+    def __init__(self, *args, **kwargs):
+        super(SlurmJobGenerator, self).__init__(*args, **kwargs)
+
+    def _adapt_options(self, pbs):
+        # Remove queue, there is no queue in Slurm
+        if "-q" in pbs.options:
+            del pbs.options["-q"]
+
+        # SBATCH does not interpret options, they can only contain %A if we
+        # want to include job's name and %a to include job array's index
+        for option in ['-o', '-e']:
+            pbs.options[option] = re.sub('"\$PBS_JOBID"', '%A',
+                                         pbs.options[option])
+
+        # Convert to Slurm's --export
+        #
+        # Warning: Slurm does **not** export variables defined locally such as
+        #          variables defined along the command line. For ex:
+        #          PBS_FILENAME=something sbatch --export=ALL somefile.sh
+        #          would *not* export PBS_FILENAME to the script.
+        if pbs.options.pop('-V', None) is not None:
+            pbs.add_sbatch_options(export='ALL')
+
+    def _adapt_commands(self, pbs):
+        pass
+
+    def _adapt_resources(self, pbs):
+        # Set proper option for gpus
+        match = re.match(".*gpus=([0-9]+)", pbs.resources['nodes'])
+        if match:
+            gpus = match.group(1)
+            pbs.add_resources(naccelerators=gpus)
+            pbs.resources['nodes'] = re.sub(":gpus=[0-9]+", "",
+                                            pbs.resources['nodes'])
+
+        # Set proper option for cpus
+        match = re.match(".*ppn=([0-9]+)", pbs.resources['nodes'])
+        if match:
+            ppn = match.group(1)
+            pbs.add_resources(ncpus=ppn)
+            pbs.resources['nodes'] = re.sub("ppn=[0-9]+", "", pbs.resources['nodes'])
+
+    def _adapt_variable_names(self, pbs):
+        for command_id, command in enumerate(pbs.commands):
+            pbs.commands[command_id] = command = re.sub(
+                "\$PBS_JOBID", "$SLURM_JOB_ID", command)
+            # NOTE: SBATCH_TIMELIMIT is **not** an official slurm environment
+            # variable, it needs to be set in the script.
+            pbs.commands[command_id] = command = re.sub(
+                "\$PBS_WALLTIME", "$SBATCH_TIMELIMIT", command)
+
+    def _adapt_prolog(self, pbs):
+        # Set SBATCH_TIMELIMIT in the prolog, hence, before any code from
+        # commands and epilog.
+        pbs.add_to_prolog(
+            "SBATCH_TIMELIMIT=%s" %
+            utils.walltime_to_seconds(pbs.resources["walltime"]))
+
+    def _add_cluster_specific_rules(self):
+        for pbs in self.pbs_list:
+            self._adapt_options(pbs)
+            self._adapt_resources(pbs)
+            self._adapt_variable_names(pbs)
+            self._adapt_prolog(pbs)
+            self._adapt_commands(pbs)
