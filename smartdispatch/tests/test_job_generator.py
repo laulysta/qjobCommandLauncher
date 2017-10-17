@@ -1,16 +1,24 @@
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
-
 import os
-import tempfile
 import shutil
+import tempfile
+import unittest
+
+try:
+    from mock import patch
+except ImportError:
+    from unittest.mock import patch
+
 from smartdispatch.queue import Queue
 from smartdispatch.job_generator import JobGenerator, job_generator_factory
 from smartdispatch.job_generator import HeliosJobGenerator, HadesJobGenerator
 from smartdispatch.job_generator import GuilliminJobGenerator, MammouthJobGenerator
+from smartdispatch.job_generator import SlurmJobGenerator
 
 
 class TestJobGenerator(object):
     pbs_flags = ['-lfeature=k80', '-lwalltime=42:42', '-lnodes=6:gpus=66', '-m', '-A123-asd-11', '-t10,20,30']
+    sbatch_flags = ['--qos=high', '--output=file.out', '-Cminmemory']
 
     def setUp(self):
         self.testing_dir = tempfile.mkdtemp()
@@ -127,6 +135,32 @@ class TestJobGenerator(object):
     def test_add_pbs_flags_invalid_resource(self):
         assert_raises(ValueError, self._test_add_pbs_flags, '-l weeee')
 
+    def _test_add_sbatch_flags(self, flags):
+        job_generator = JobGenerator(self.queue, self.commands)
+        job_generator.add_sbatch_flags(flags)
+        options = []
+
+        for flag in flags:
+            if flag.startswith('--'):
+                options += [flag]
+            elif flag.startswith('-'):
+                options += [(flag[:2] + ' ' + flag[2:]).strip()]
+
+        for pbs in job_generator.pbs_list:
+            pbs_str = pbs.__str__()
+            for flag in options:
+                assert_equal(pbs_str.count(flag), 1)
+
+    def test_add_sbatch_flags(self):
+        for flag in self.sbatch_flags:
+            yield self._test_add_sbatch_flags, [flag]
+
+        yield self._test_add_sbatch_flags, [flag]
+
+    def test_add_sbatch_flag_invalid(self):
+        invalid_flags = ["--qos high", "gpu", "-lfeature=k80"]
+        for flag in invalid_flags:
+            assert_raises(ValueError, self._test_add_sbatch_flags, flag)
 
 class TestGuilliminQueue(object):
 
@@ -241,6 +275,87 @@ class TestHadesQueue(object):
     def test_pbs_split_2_job_nb_commands(self):
         assert_true("ppn=6" in str(self.pbs8[0]))
         assert_true("ppn=2" in str(self.pbs8[1]))
+
+
+class TestSlurmQueue(unittest.TestCase):
+
+    def setUp(self):
+        self.walltime = "10:00"
+        self.cores = 42
+        self.mem_per_node = 32
+        self.nb_cores_per_node = 1
+        self.nb_gpus_per_node = 2
+        self.queue = Queue("slurm", "mila", self.walltime, self.nb_cores_per_node, self.nb_gpus_per_node, self.mem_per_node)
+
+        self.nb_of_commands = 4
+        self.commands = ["echo %d; echo $PBS_JOBID; echo $PBS_WALLTIME" % i
+                         for i in range(self.nb_of_commands)]
+
+        self.prolog = ["echo prolog"]
+        self.epilog = ["echo $PBS_FILENAME"]
+        job_generator = SlurmJobGenerator(
+            self.queue, self.commands, prolog=self.prolog, epilog=self.epilog)
+        self.pbs = job_generator.pbs_list
+
+        with patch.object(SlurmJobGenerator,'_add_cluster_specific_rules', side_effect=lambda: None):
+            dummy_generator = SlurmJobGenerator(
+                self.queue, self.commands, prolog=self.prolog, epilog=self.epilog)
+            self.dummy_pbs = dummy_generator.pbs_list
+
+    def test_ppn_ncpus(self):
+        assert_true("ppn" in str(self.dummy_pbs[0]))
+        assert_true("ncpus" not in str(self.dummy_pbs[0]))
+        assert_true("ppn" not in str(self.pbs[0]))
+        assert_true("ncpus" in str(self.pbs[0]))
+
+    def test_gpus_naccelerators(self):
+        assert_true("gpus" in str(self.dummy_pbs[0]))
+        assert_true("naccelerators" not in str(self.dummy_pbs[0]))
+        assert_true("gpus" not in str(self.pbs[0]))
+        assert_true("naccelerators" in str(self.pbs[0]))
+
+    def test_queue(self):
+        assert_true("PBS -q" in str(self.dummy_pbs[0]))
+        assert_true("PBS -q" not in str(self.pbs[0]))
+
+    def test_export(self):
+        assert_true("#PBS -V" in str(self.dummy_pbs[0]))
+        assert_true("#PBS -V" not in str(self.pbs[0]))
+        assert_true("#SBATCH --export=ALL" in str(self.pbs[0]))
+
+    def test_outputs(self):
+        for std in ['-e', '-o']:
+            value = self.dummy_pbs[0].options[std]
+            assert_true("$PBS_JOBID" in value, 
+                        "$PBS_JOBID should be present in option %s: %s" %
+                        (std, value))
+
+            value = self.pbs[0].options[std]
+            assert_true("$PBS_JOBID" not in value, 
+                        "$PBS_JOBID not should be present in option %s: %s" %
+                        (std, value))
+            assert_true("%A" in value, 
+                        "%%A should be present in option %s: %s" %
+                        (std, value))
+
+    def test_job_id_env_var(self):
+        self.assertIn("$PBS_JOBID", str(self.dummy_pbs[0]))
+        self.assertNotIn("$SLURM_JOB_ID", str(self.dummy_pbs[0])) 
+
+        self.assertNotIn("$PBS_JOBID", str(self.pbs[0]))
+        self.assertIn("$SLURM_JOB_ID", str(self.pbs[0]))
+
+    def test_walltime_env_var(self):
+        self.assertIn("$PBS_WALLTIME", str(self.dummy_pbs[0]))
+        self.assertNotIn("$SBATCH_TIMELIMIT", str(self.dummy_pbs[0]))
+
+        self.assertNotIn("$PBS_WALLTIME", str(self.pbs[0]))
+        self.assertIn("$SBATCH_TIMELIMIT", str(self.pbs[0]))
+
+        self.assertNotIn("SBATCH_TIMELIMIT=",
+                    "\n".join(self.dummy_pbs[0].prolog))
+        self.assertIn("SBATCH_TIMELIMIT=",
+                    "\n".join(self.pbs[0].prolog))
 
 
 class TestJobGeneratorFactory(object):

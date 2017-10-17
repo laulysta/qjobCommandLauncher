@@ -74,3 +74,12 @@ python my_script.py 9
 Jobs that did not terminate properly, for example, it exceeded the walltime, can be resumed using the {batch_id} given to you upon launch. Of course, all this assuming your script is resumable.
 
 *Note: Jobs are always in a batch, even if it's a batch of one.*
+
+### SLURM clusters
+
+Smartdispatch can also run on SLURM clusters.
+All features like `--gpusPerNode` or `--coresPerNode` are supported.
+However you need to pass SLURM specific features using --sbatchFlags. For simplicity, --sbatchFlags supports short and long option definitions only with the following syntax:
+-Cgpu6gb or --constraint=gpu6gb
+For comparison, this would be invalid:
+-C gpu6gb or --constraint gpu6gb.
