@@ -8,8 +8,9 @@ setup(
     author_email='smart-udes-dev@googlegroups.com',
     packages=['smartdispatch',
               'smartdispatch/workers'],
-    scripts=['scripts/smart-dispatch',
-             'scripts/sd-launch-pbs'],
+    entry_points={
+        'console_scripts': ['smart-dispatch = smartdispatch.smartdispatch_script:main',
+                            'sd-launch-pbs = smartdispatch.sd_launch_pbs_script:main']},
     url='https://github.com/SMART-Lab/smartdispatch',
     license='LICENSE.txt',
     description='An easy to use job launcher for supercomputers with PBS compatible job manager.',
