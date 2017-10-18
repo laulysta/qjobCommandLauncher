@@ -1,7 +1,6 @@
 from nose.tools import assert_true, assert_equal, assert_raises
 from numpy.testing import assert_array_equal
 
-
 from smartdispatch.pbs import PBS
 import unittest
 import tempfile
@@ -37,6 +36,16 @@ class TestPBS(unittest.TestCase):
         self.pbs.add_options(A="option2", B="option3")
         assert_equal(self.pbs.options["-A"], "option2")
         assert_equal(self.pbs.options["-B"], "option3")
+
+    def test_add_sbatch_options(self):
+        self.pbs.add_sbatch_options(a="value1")
+        assert_equal(self.pbs.sbatch_options["-a"], "value1")
+        assert_equal(len(self.pbs.sbatch_options), 1)
+        self.pbs.sbatch_options.pop("-a")
+        self.pbs.add_sbatch_options(option1="value2", option2="value3")
+        assert_equal(self.pbs.sbatch_options["--option1"], "value2")
+        assert_equal(self.pbs.sbatch_options["--option2"], "value3")
+        assert_equal(len(self.pbs.sbatch_options), 2)
 
     def test_add_resources(self):
         assert_equal(len(self.pbs.resources), 1)
@@ -135,4 +144,5 @@ module load python2.7
     def test_save(self):
         pbs_filename = os.path.join(self.testing_dir, "pbs.sh")
         self.pbs.save(pbs_filename)
+        self.pbs.prolog.insert(0, "PBS_FILENAME=%s" % pbs_filename)
         assert_equal(str(self.pbs), open(pbs_filename).read())

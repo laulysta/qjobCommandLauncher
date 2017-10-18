@@ -35,6 +35,8 @@ class PBS(object):
         self.options = OrderedDict()
         self.add_options(q=queue_name)
 
+        self.sbatch_options = OrderedDict()
+
         # Declares that all environment variables in the qsub command's environment are to be exported to the batch job.
         self.add_options(V="")
 
@@ -61,6 +63,22 @@ class PBS(object):
                     raise ValueError("Maximum number of characters for the name is: 64")
 
             self.options["-" + option_name] = option_value
+
+    def add_sbatch_options(self, **options):
+        """ Adds sbatch options to this PBS file.
+
+        Parameters
+        ----------
+        **options : dict
+            each key is the name of a SBATCH option
+        """
+
+        for option_name, option_value in options.items():
+            if len(option_name) == 1:
+                dash = "-"
+            else:
+                dash = "--"
+            self.sbatch_options[dash + option_name] = option_value
 
     def add_resources(self, **resources):
         """ Adds resources to this PBS file.
@@ -144,7 +162,9 @@ class PBS(object):
             specified where to save this PBS file
         """
         with open(filename, 'w') as pbs_file:
+            self.prolog.insert(0, "PBS_FILENAME=%s" % filename)
             pbs_file.write(str(self))
+            self.prolog.pop(0)
 
     def __str__(self):
         pbs = []
@@ -158,6 +178,12 @@ class PBS(object):
 
         for resource_name, resource_value in self.resources.items():
             pbs += ["#PBS -l {0}={1}".format(resource_name, resource_value)]
+
+        for option_name, option_value in self.sbatch_options.items():
+            if option_name.startswith('--'):
+                pbs += ["#SBATCH {0}={1}".format(option_name, option_value)]
+            else:
+                pbs += ["#SBATCH {0} {1}".format(option_name, option_value)]
 
         pbs += ["\n# Modules #"]
         for module in self.modules:

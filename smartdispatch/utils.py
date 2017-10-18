@@ -1,10 +1,37 @@
-import re
+import distutils
+import distutils.spawn
 import hashlib
-import unicodedata
 import json
+import logging
+import re
+import unicodedata
 
-from distutils.util import strtobool
 from subprocess import Popen, PIPE
+
+
+logger = logging.getLogger(__name__)
+
+
+TIME_REGEX = re.compile(
+    "^(?:(?:(?:(\d*):)?(\d*):)?(\d*):)?(\d*)$")
+
+
+def walltime_to_seconds(walltime):
+    if not TIME_REGEX.match(walltime):
+        raise ValueError(
+            "Invalid walltime format: %s\n"
+            "It must be either DD:HH:MM:SS, HH:MM:SS, MM:SS or S" %
+            walltime)
+
+    split = walltime.split(":")
+
+    while len(split) < 4:
+        split = [0] + split
+
+    days, hours, minutes, seconds = map(int, split)
+
+    return (((((days * 24) + hours) * 60) + minutes) * 60) + seconds
+
 
 def jobname_generator(jobname, job_id):
     '''Crop the jobname to a maximum of 64 characters.
@@ -17,7 +44,7 @@ def jobname_generator(jobname, job_id):
     Returns
     -------
     str
-    The cropped version of the string.  
+    The cropped version of the string.
     '''
     # 64 - 1 since the total length including -1 should be less than 64
     job_id = str(job_id)
@@ -48,10 +75,10 @@ def yes_no_prompt(query, default=None):
     while True:
         try:
             answer = raw_input("{0}{1}".format(query, available_prompts[default]))
-            return strtobool(answer)
+            return distutils.strtobool(answer)
         except ValueError:
             if answer == '' and default is not None:
-                return strtobool(default)
+                return distutils.strtobool(default)
 
 
 def chunks(sequence, n):
@@ -114,8 +141,10 @@ def detect_cluster():
     try:
         output = Popen(["qstat", "-B"], stdout=PIPE).communicate()[0]
     except OSError:
-        # If qstat is not available we assume that the cluster is unknown.
-        return None
+        # If qstat is not available we assume that the cluster uses slurm. 
+        # (Otherwise return None)
+        cluster_name = get_slurm_cluster_name()
+        return cluster_name
     # Get server name from status
     server_name = output.split('\n')[2].split(' ')[0]
     # Cleanup the name and return it
@@ -130,9 +159,38 @@ def detect_cluster():
         cluster_name = "hades"
     return cluster_name
 
+def get_slurm_cluster_name():
+    try:
+        popen = Popen("sacctmgr list cluster", stdout=PIPE, shell=True)
+        stdout, stderr = popen.communicate()
+    except OSError:
+        return None
+
+    try:
+        stdout = stdout.decode()
+        cluster_name = stdout.splitlines()[2].strip().split(' ')[0]
+    except IndexError:
+        logger.debug(stderr)
+        return None
+
+    return cluster_name
+
+
+MSUB_CLUSTERS = ["helios"]
+SUPPORTED_LAUNCHERS = ["qsub", "msub", "sbatch"]
+
+
+def command_is_available(command):
+    return distutils.spawn.find_executable(command) is not None
+
 
 def get_launcher(cluster_name):
-    if cluster_name == "helios":
+    # Gives priority to msub if qsub is also present
+    if cluster_name in MSUB_CLUSTERS:
         return "msub"
-    else:
-        return "qsub"
+
+    for launcher in SUPPORTED_LAUNCHERS:
+        if command_is_available(launcher):
+            return launcher
+
+    return None
