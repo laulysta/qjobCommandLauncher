@@ -77,9 +77,6 @@ fi
 
 
 def main():
-    # Necessary if we want 'logging.info' to appear in stderr.
-    logging.root.setLevel(logging.INFO)
-
     args = parse_arguments()
     path_smartdispatch_logs = pjoin(os.getcwd(), LOGS_FOLDERNAME)
 
