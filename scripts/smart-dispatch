@@ -22,6 +22,9 @@ import smartdispatch
 
 logger = logging.getLogger()
 
+VERBOSE_WARNING = 0
+VERBOSE_INFO = 1
+VERBOSE_DEBUG = 2
 
 LOGS_FOLDERNAME = "SMART_DISPATCH_LOGS"
 CLUSTER_NAME = utils.detect_cluster()
@@ -39,40 +42,48 @@ VERBOSE={verbose}
 """
 AUTORESUME_EPILOG = """\
 NEED_TO_RESUME=false
-if [ $VERBOSE = true ]; then
-    echo NEED_TO_RESUME=$NEED_TO_RESUME
-    echo WORKER_PIDS=$WORKER_PIDS
+if [ $VERBOSE -ge {debug} ]; then
+    echo "DEBUG: NEED_TO_RESUME=$NEED_TO_RESUME"
+    echo "DEBUG: WORKER_PIDS=$WORKER_PIDS"
 fi
 for WORKER_PID in $WORKER_PIDS; do
-    if [ $VERBOSE = true ]; then
-        echo WORKER_PID=$WORKER_PID
+    if [ $VERBOSE -ge {debug} ]; then
+        echo "DEBUG: WORKER_PID=$WORKER_PID"
     fi
     wait "$WORKER_PID"
     RETURN_CODE=$?
-    if [ $VERBOSE = true ]; then
+    if [ $VERBOSE -ge {debug} ]; then
         echo "DEBUG: RETURN_CODE is $RETURN_CODE while timeout_exit_code is {timeout_exit_code}"
     fi
     if [ $RETURN_CODE -eq {timeout_exit_code} ]; then
         NEED_TO_RESUME=true
     fi
-    if [ $VERBOSE = true ]; then
-        echo NEED_TO_RESUME=$NEED_TO_RESUME
+    if [ $VERBOSE -ge {debug} ]; then
+        echo "DEBUG: NEED_TO_RESUME=$NEED_TO_RESUME"
     fi
 done
-if [ $VERBOSE = true ]; then
-    echo NEED_TO_RESUME=$NEED_TO_RESUME
+if [ $VERBOSE -ge {debug} ]; then
+    echo "DEBUG: NEED_TO_RESUME=$NEED_TO_RESUME"
 fi
 if [ "$NEED_TO_RESUME" = true ]; then
     echo "Autoresuming using: {{launcher}} $PBS_FILENAME"
-    if [ $VERBOSE = true]; then
-        VERBOSE_OPTION="-vv"
+    if [ $VERBOSE -ge 0 ]
+    then
+        VERBOSE_OPTION="-"
+        for ((i=0;i<VERBOSE;i++))
+        do
+            VERBOSE_OPTION="${{{{VERBOSE_OPTION}}}}v"
+        done
     else
         VERBOSE_OPTION=""
     fi
 
-    sd-launch-pbs $VERBOSE_OPTION --launcher {{launcher}} $PBS_FILENAME {{path_job}}
+    if [ $VERBOSE -ge {debug} ]; then
+        echo "DEBUG: executing sd-launch-pbs ${{{{VERBOSE_OPTION}}}} --launcher {{launcher}} $PBS_FILENAME {{path_job}}"
+    fi
+    sd-launch-pbs ${{{{VERBOSE_OPTION}}}} --launcher {{launcher}} $PBS_FILENAME {{path_job}}
 fi
-""".format(timeout_exit_code=TIMEOUT_EXIT_CODE)
+""".format(timeout_exit_code=TIMEOUT_EXIT_CODE, debug=VERBOSE_DEBUG)
 
 
 def main():
@@ -189,7 +200,7 @@ def main():
     prolog = []
     epilog = ['wait']
     if args.autoresume:
-        prolog = [AUTORESUME_PROLOG.format(verbose=str(args.verbose >= 2).lower())]
+        prolog = [AUTORESUME_PROLOG.format(verbose=args.verbose)]
         epilog = [AUTORESUME_EPILOG.format(launcher=LAUNCHER if args.launcher is None else args.launcher, path_job=path_job)]
 
     job_generator = job_generator_factory(queue, commands, prolog, epilog, command_params, CLUSTER_NAME, path_job)
@@ -259,11 +270,11 @@ def parse_arguments():
         if args.coresPerCommand < 1:
             parser.error("coresPerNode must be at least 1")
 
-    if args.verbose == 0:
+    if args.verbose == VERBOSE_WARNING:
         logging.basicConfig(level=logging.WARNING)
-    elif args.verbose == 1:
+    elif args.verbose == VERBOSE_INFO:
         logging.basicConfig(level=logging.INFO)
-    elif args.verbose >= 2:
+    elif args.verbose >= VERBOSE_DEBUG:
         logging.basicConfig(level=logging.DEBUG)
 
     return args
