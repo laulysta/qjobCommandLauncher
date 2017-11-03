@@ -33,7 +33,7 @@ TIMEOUT_EXIT_CODE = 124
 AUTORESUME_TRIGGER_AFTER = '$(($PBS_WALLTIME - 60))'  # By default, 60s before the maximum walltime.
 AUTORESUME_WORKER_CALL_PREFIX = 'timeout -s TERM {trigger_after} '.format(trigger_after=AUTORESUME_TRIGGER_AFTER)
 AUTORESUME_WORKER_CALL_SUFFIX = ' WORKER_PIDS+=" $!"'
-AUTORESUME_PROLOG = """
+AUTORESUME_PROLOG = """\
 WORKER_PIDS=""
 VERBOSE={verbose}
 """
@@ -50,8 +50,7 @@ for WORKER_PID in $WORKER_PIDS; do
     wait "$WORKER_PID"
     RETURN_CODE=$?
     if [ $VERBOSE = true ]; then
-        echo "RETURN_CODE is $RETURN_CODE while " \
-             "timeout_exit_code is {timeout_exit_code}"
+        echo "DEBUG: RETURN_CODE is $RETURN_CODE while timeout_exit_code is {timeout_exit_code}"
     fi
     if [ $RETURN_CODE -eq {timeout_exit_code} ]; then
         NEED_TO_RESUME=true
@@ -190,12 +189,8 @@ def main():
     prolog = []
     epilog = ['wait']
     if args.autoresume:
-        prolog = [
-            AUTORESUME_PROLOG.format(verbose=str(args.verbose >= 2).lower())]
-        epilog = [
-            AUTORESUME_EPILOG.format(
-                launcher=LAUNCHER if args.launcher is None else args.launcher,
-                path_job=path_job)]
+        prolog = [AUTORESUME_PROLOG.format(verbose=str(args.verbose >= 2).lower())]
+        epilog = [AUTORESUME_EPILOG.format(launcher=LAUNCHER if args.launcher is None else args.launcher, path_job=path_job)]
 
     job_generator = job_generator_factory(queue, commands, prolog, epilog, command_params, CLUSTER_NAME, path_job)
     
